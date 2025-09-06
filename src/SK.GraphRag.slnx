@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SK.GraphRag.AppHost/SK.GraphRag.AppHost.csproj" />
+  <Project Path="SK.GraphRag.ServiceDefaults/SK.GraphRag.ServiceDefaults.csproj" />
+  <Project Path="SK.GraphRag/SK.GraphRag.csproj" />
+</Solution>
