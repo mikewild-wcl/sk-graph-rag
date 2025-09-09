@@ -1,4 +1,5 @@
 using SK.GraphRag.Components;
+using SK.GraphRag.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,10 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services
+    .RegisterServices()
+    .RegisterGraphDatabase(builder.Configuration);
 
 var app = builder.Build();
 
@@ -21,7 +26,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 
 app.UseAntiforgery();
 

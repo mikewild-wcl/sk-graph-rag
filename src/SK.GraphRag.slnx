@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="SK.GraphRag.AppHost/SK.GraphRag.AppHost.csproj" />
-  <Project Path="SK.GraphRag.ServiceDefaults/SK.GraphRag.ServiceDefaults.csproj" />
+  <Folder Name="/Aspire/">
+    <Project Path="SK.GraphRag.AppHost/SK.GraphRag.AppHost.csproj" />
+    <Project Path="SK.GraphRag.ServiceDefaults/SK.GraphRag.ServiceDefaults.csproj" />
+  </Folder>
+  <Project Path="SK.GraphRag.Application/SK.GraphRag.Application.csproj" Id="a32814b8-7c4c-4159-807b-935696815587" />
   <Project Path="SK.GraphRag/SK.GraphRag.csproj" />
 </Solution>
