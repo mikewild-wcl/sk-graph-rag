@@ -3,9 +3,6 @@ FROM neo4j:2025.08.0
 
 ENV NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
 
-# Listen on all ports
-# ENV NEO4J_server_default__listen__address=0.0.0.0
-
 # Ask Neo4j to install APOC and Graph Data Science on startup
 ENV NEO4J_PLUGINS='["apoc","graph-data-science"]'
 
