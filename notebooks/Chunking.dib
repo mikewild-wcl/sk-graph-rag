@@ -1,0 +1,53 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp","languageName":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!markdown
+
+# Chunking
+
+#!csharp
+
+//TODO: Will use tiktoken to count tokems
+#r "nuget:Tiktoken, 2.2.0"
+#r "nuget: System.Net.Http, 4.3.4"
+
+#!csharp
+
+using System.Net.Http;
+using Tiktoken;
+
+#!csharp
+
+var url = "https://www.gutenberg.org/cache/epub/1727/pg1727.txt";
+
+//TODO: Use httpclient to read the file then chunk it
+// response = requests.get(url)
+
+var client = new HttpClient();
+var response = await client.GetAsync(url);
+var text = await response.Content.ReadAsStringAsync();
+
+if(text.Length > 0)
+{
+    Console.WriteLine($"Text length: {text.Length}");
+    Console.WriteLine($"Text: {text[0..100]}");
+    Console.WriteLine($"{text}");
+}
+else
+{
+    Console.WriteLine("Failed to retrieve text or text is too short.");
+}
+
+client.Dispose();
+
+#!csharp
+
+// Tiktoken usage from 
+/*
+var encoder = ModelToEncoder.For("gpt-4o"); // or explicitly using new Encoder(new O200KBase())
+var tokens = encoder.Encode("hello world"); // [15339, 1917]
+var text = encoder.Decode(tokens); // hello world
+var numberOfTokens = encoder.CountTokens(text); // 2
+var stringTokens = encoder.Explore(text); // ["hello", " world"]
+*/

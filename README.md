@@ -1,5 +1,5 @@
 # sk-graph-rag
-A space for learning GraphRAG with Semantic Kernel neo4j
+A space for learning GraphRAG with Semantic Kernel neo4j.
 
 
 ## Graph database
@@ -10,6 +10,9 @@ For a suggested approach to dependency injection see [Neo4j Data Access for Your
 Neo4j can be run locally using Docker. See https://neo4j.com/docs/operations-manual/current/docker/introduction/
 
 A dockerfile is included in the AppHost project and this will start Neo4j when the application starts.
+
+Some of the code in this project was inspired by the book Essential GraphRAG. The code for that book
+is at 
 
 
 ## Docker

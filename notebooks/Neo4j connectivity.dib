@@ -1,0 +1,131 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp","languageName":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!markdown
+
+# Neo4j connectivity
+
+Set up Neo4j to prove the connection code and simple queries work
+
+#!pwsh
+
+# check working directory
+$(Pwd)
+
+#!csharp
+
+#r "nuget: Microsoft.Extensions.Configuration, 9.0.9"
+#r "nuget: Microsoft.Extensions.Configuration.Json, 9.0.7"
+#r "nuget:Neo4j.Driver, 5.28.3"
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+using Neo4j.Driver;
+using System.IO;
+
+#!csharp
+
+//Get configuration
+var config = new ConfigurationBuilder()
+    .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"))
+    .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.Development.json"), optional: true)
+    .Build();
+
+var user = config["Neo4j:User"];
+var password = config["Neo4j:Password"];
+var connectionUri = config["Neo4j:Connection"];
+
+Console.WriteLine($"Neo4j details: Connection: {connectionUri}, auth user: {user}/{password}");
+
+#!csharp
+
+// Create driver and database
+// var driver = GraphDatabase.Driver(connection, AuthTokens.Basic(user, password));
+// var session = driver.AsyncSession();
+var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
+await driver.VerifyConnectivityAsync();
+Console.WriteLine("Connection established.");
+
+#!csharp
+
+// Query - assumes the movie-graph has been created
+try
+{
+    var result = await driver.ExecutableQuery(@"
+        MATCH (people:Person) RETURN people.name as name LIMIT 10
+        ")
+        //.WithConfig(new QueryConfig(database: "movies"))
+        .ExecuteAsync();
+
+    // Loop through results and print people's name
+    foreach (var record in result.Result) {
+        Console.WriteLine(record.Get<string>("name"));
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
+
+#!csharp
+
+//Can't do this because the Community edition only allows one database
+/*
+using (var session = driver.AsyncSession(s => s.WithDatabase("system")))
+{
+    await session.ExecuteWriteAsync(async tx =>
+    {
+        // Create database if it does not exist
+        await tx.RunAsync("CREATE DATABASE my_database IF NOT EXISTS");
+    });
+}
+*/
+
+#!csharp
+
+//Can't do this because the Community edition only allows one database
+/*
+const string dbName = "testDatabase";
+
+using(var session = driver.AsyncSession())
+{
+    try
+    {
+        // Check if the database already exists
+        var checkDbResult = await session.ExecuteReadAsync(async tx =>
+        {
+            var result = await tx.RunAsync("SHOW DATABASES")
+            return await result.ToListAsync();
+        });
+
+        bool dbExists = checkDbResult.Any(record => record["name"].As<string>() == dbName);
+
+        if (dbExists)
+        {
+            Console.WriteLine($"Database '{dbName}' already exists.");
+        }
+        else
+        {        
+            Console.WriteLine($"Database '{dbName}' does not exist. Proceeding to create it.");
+            var createDatabaseQuery = $"CREATE DATABASE {dbName}";
+
+            await session.ExecuteWriteAsync(async tx =>
+            {
+                await tx.RunAsync(createDatabaseQuery);
+            });
+
+            Console.WriteLine("Database 'myDatabase' created successfully!");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred: {ex.Message}");
+    }
+}
+*/
+
+#!csharp
+
+// Cleanup
+await driver.DisposeAsync();
