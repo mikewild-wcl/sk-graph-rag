@@ -12,7 +12,7 @@ Neo4j can be run locally using Docker. See https://neo4j.com/docs/operations-man
 A dockerfile is included in the AppHost project and this will start Neo4j when the application starts.
 
 Some of the code in this project was inspired by the book Essential GraphRAG. The code for that book
-is at 
+is at https://github.com/tomasonjo/kg-rag.
 
 
 ## Docker

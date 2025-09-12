@@ -1,0 +1,48 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp","languageName":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!markdown
+
+# Neo4j text2cypher
+
+An implementation of an LLM-based text to Cypher translator adapted from chapter 4 of Essential GraphRAG. The original notebokk is https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch04.ipynb.
+
+#!csharp
+
+// nugets
+
+#!csharp
+
+//Using 
+
+#!csharp
+
+var promptTemplate = """
+Instructions: 
+Generate Cypher statement to query a graph database to get the data to answer the user question below.
+
+Graph Database Schema:
+Use only the provided relationship types and properties in the schema.
+Do not use any other relationship types or properties that are not provided in the schema.
+{schema}
+
+Terminology mapping:
+This section is helpful to map terminology between the user question and the graph database schema.
+{terminology}
+
+Examples:
+The following examples provide useful patterns for querying the graph database.
+{examples}
+
+Format instructions:
+Do not include any explanations or apologies in your responses.
+Do not respond to any questions that might ask anything else than for you to 
+construct a Cypher statement.
+Do not include any text except the generated Cypher statement.
+ONLY RESPOND WITH CYPHER, NO CODEBLOCKS.
+
+User question: {question}
+""";
+
+promptTemplate
