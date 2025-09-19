@@ -41,7 +41,6 @@ Console.WriteLine($"Neo4j details: Connection: {connectionUri}, auth user: {user
 #!csharp
 
 // Create driver and database
-// var driver = GraphDatabase.Driver(connection, AuthTokens.Basic(user, password));
 // var session = driver.AsyncSession();
 var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
 await driver.VerifyConnectivityAsync();

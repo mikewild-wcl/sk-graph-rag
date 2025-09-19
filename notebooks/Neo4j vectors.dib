@@ -12,9 +12,13 @@ A simple demo of vectors based on chapter 2 of Essential GraphRAG. The original 
 
 #r "nuget: Microsoft.Extensions.Configuration, 9.0.9"
 #r "nuget: Microsoft.Extensions.Configuration.Json, 9.0.7"
+#r "nuget: Microsoft.SemanticKernel, 1.65.0"
+#r "nuget: Neo4j.Driver, 5.28.3"
 #r "nuget: PdfPig, 0.1.11"
-#r "nuget:Neo4j.Driver, 5.28.3"
 #r "nuget: System.Net.Http, 4.3.4"
+
+// NOTE: System.Linq.Async required for IAsyncEnumerable support, but deprecated in .net 10
+#r "nuget:System.Linq.Async, 6.0.3"
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
@@ -39,20 +43,18 @@ Console.WriteLine($"Neo4j details: Connection: {connectionUri}, auth user: {user
 #!csharp
 
 // Create driver and database
-// var driver = GraphDatabase.Driver(connection, AuthTokens.Basic(user, password));
-// var session = driver.AsyncSession();
+
+password = "password"; // Workaround for incorrect default password in docker
+
 var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
 await driver.VerifyConnectivityAsync();
 Console.WriteLine("Connection established.");
 
 #!csharp
 
-// Create the http client
-var httpClient = new HttpClient();
-
-#!csharp
-
 // Read the input file from the web and save it in a local folder
+
+var httpClient = new HttpClient();
 
 var downloadDir = "downloads";
 var fileName = "Einstein’s Patents and Inventions.pdf";
@@ -90,74 +92,383 @@ else
     }
 } 
 
-#!markdown
+#!csharp
 
-// Use PDFPig to extract data for chunking
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
-using(var pdf = PdfDocument.Open(Path.Combine(sourceDirectory, document.DocumentId)))
-{
+IReadOnlyList<Letter> letters1 = null;
+var allLetters = new StringBuilder();
 
+using (var document = PdfDocument.Open(filePath))
+{
+    foreach (var page in document.GetPages())
+    {
+        var letters = page.Letters;
+        string example = string.Join(string.Empty, letters.Select(x => x.Value));
+        
+        allLetters.Append(string.Join(string.Empty, letters.Select(x => x.Value)));
+
+        //var words = page.GetWords();
+        IEnumerable<IPdfImage> images = page.GetImages();
+
+        var words = NearestNeighbourWordExtractor.Instance.GetWords(letters);
+        var textBlocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+        var pageText = string.Join(string.Empty,
+            textBlocks.Select(t => t.Text.ReplaceLineEndings(" ")).ToArray());
+
+        Console.WriteLine($"Page {page.Number} has {letters.Count()} letters, {words.Count()} words, and {images.Count()} images.");
+
+        // if(page.Number == 1)
+        // {
+        //     letters1 = letters;
+        //     page1 = pageText;
+        //     Console.WriteLine();
+        //     Console.WriteLine("Example text from page 1:");
+        //     Console.WriteLine(example.Substring(0, Math.Min(example.Length, 500)));
+        // }
+    }
+
+    Console.WriteLine($"allLetters len={allLetters.Length}");;
+    
+    Console.WriteLine(allLetters.ToString().Substring(0, Math.Min(allLetters.Length, 500)));
 }
 
 #!csharp
 
-//Can't do this because the Community edition only allows one database
-/*
-using (var session = driver.AsyncSession(s => s.WithDatabase("system")))
+var chunks = new List<string>();
+var chunkSize = 1000;
+var overlap = 200;  
+
+for (int i = 0; i < allLetters.Length; i += (chunkSize - overlap))
 {
-    await session.ExecuteWriteAsync(async tx =>
-    {
-        // Create database if it does not exist
-        await tx.RunAsync("CREATE DATABASE my_database IF NOT EXISTS");
-    });
+    int size = Math.Min(chunkSize, allLetters.Length - i);
+    string chunk = allLetters.ToString(i, size);
+    chunks.Add(chunk);
+   
+    if (i + size >= allLetters.Length)
+        break;
+
+    /*
+    // Python version:
+    while index < len(text):
+        if split_on_whitespace_only:
+            prev_whitespace = 0
+            left_index = index - overlap
+            while left_index >= 0:
+                if text[left_index] == " ":
+                    prev_whitespace = left_index
+                    break
+                left_index -= 1
+            next_whitespace = text.find(" ", index + chunk_size)
+            if next_whitespace == -1:
+                next_whitespace = len(text)
+            chunk = text[prev_whitespace:next_whitespace].strip()
+            chunks.append(chunk)
+            index = next_whitespace + 1
+        else:
+            start = max(0, index - overlap + 1)
+            end = min(index + chunk_size + overlap, len(text))
+            chunk = text[start:end].strip()
+            chunks.append(chunk)
+            index += chunk_size
+    */    
 }
+
+Console.WriteLine($"Created {chunks.Count} chunks");
+
+#!csharp
+
+using System.Linq;
+
+public async static IAsyncEnumerable<string> ReadText(string path)
+{
+    using var document = PdfDocument.Open(path);
+    {
+        foreach (var page in document.GetPages())
+        {
+            var letters = page.Letters;
+            yield return string.Join(string.Empty, letters.Select(x => x.Value));
+        }
+    }
+}
+
+public async static IAsyncEnumerable<string> ReadLetterStrings(string path)
+{
+    using var doc = PdfDocument.Open(path);
+    {
+        foreach (var page in doc.GetPages())
+        {
+            var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+            var textBlocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+            var pageText = string.Join(string.Empty,
+                textBlocks.Select(t => t.Text.ReplaceLineEndings(" "))
+                //.ToArray()
+                );
+            
+            yield return pageText;
+        }
+    }
+}
+
+// await foreach(var pageText in ReadText(filePath))
+// {
+//     Console.WriteLine($"Read {pageText.Length} characters from a page.");
+// }
+
+// var chunks = new List<string>();
+// await foreach(var pageText in ReadLetterStrings(filePath))
+// {
+//     Console.WriteLine($"Read {pageText.Length} letters from a page.");
+
+//     // Accumulate chunks
+// }
+
+for(var i = 0; i < chunks.Count && i < 5; i++)
+{
+    Console.WriteLine($"Chunk {i} length {chunks[i].Length} - {chunks[i]}.");
+}
+
+#!csharp
+
+// Set up Semantic Kernel with Azure OpenAI
+
+using Azure.AI.OpenAI;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using System.ClientModel;
+
+// Get Azure OpenAI configuration
+var endpoint = config["AzureOpenAI:Endpoint"];
+var apiKey = config["AzureOpenAI:ApiKey"];
+var deployment = config["AzureOpenAI:DeploymentName"];
+var embeddingDeployment = config["AzureOpenAI:EmbeddingDeploymentName"];
+
+var apiClient = new AzureOpenAIClient(
+    new Uri(endpoint),
+    new ApiKeyCredential(apiKey));
+
+#pragma warning disable SKEXP0010 // Type is for evaluation purposes only
+var kernel = Kernel.CreateBuilder()
+  .AddAzureOpenAIChatCompletion(
+      deploymentName: deployment,
+      azureOpenAIClient: apiClient)
+    .AddAzureOpenAIEmbeddingGenerator(
+        embeddingDeployment,
+        apiClient,
+        dimensions: 1536)
+    .Build();
+#pragma warning restore SKEXP0010
+
+#!csharp
+
+using Microsoft.Extensions.AI;
+//using Microsoft.Extensions.VectorData;
+
+var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+
+foreach(var chunk in chunks)
+{
+    var embedding = await embeddingGenerator.GenerateVectorAsync(chunk);
+
+    Console.WriteLine($"Chunk length {chunk.Length} has embedding with {embedding.Length} dimensions.");
+    Console.WriteLine($"    {chunk}");
+    Console.WriteLine($"    {embedding.ToArray()[0]}, {embedding.ToArray()[1]}, {embedding.ToArray()[2]}, ..., {embedding.ToArray() [embedding.Length - 1]}");
+}
+
+#!csharp
+
+// Create vector index in Neo4j
+try
+{
+    var result = await driver.ExecutableQuery(
+        """
+        CREATE VECTOR INDEX pdf IF NOT EXISTS
+        FOR (c:Chunk)
+        ON c.embedding
+        """)
+        .ExecuteAsync();
+
+    Console.WriteLine("Created vector index.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error while creating vector index: {ex.Message}");
+}
+
+#!csharp
+
+// Create full-text index in Neo4j
+try
+{
+    var result = await driver.ExecutableQuery(
+        """
+        CREATE FULLTEXT INDEX ftPdfChunk IF NOT EXISTS
+        FOR (c:Chunk) 
+        ON EACH [c.text]
+        """)
+        .ExecuteAsync();
+
+    Console.WriteLine("Created full-text index.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error while creating full-text index: {ex.Message}");
+}
+
+#!csharp
+
+/*
+# Add to neo4j
+cypher_query = '''
+WITH $chunks as chunks, range(0, size($chunks)) AS index
+UNWIND index AS i
+WITH i, chunks[i] AS chunk, $embeddings[i] AS embedding
+MERGE (c:Chunk {index: i})
+SET c.text = chunk, c.embedding = embedding
+'''
+
+driver.execute_query(cypher_query, chunks=chunks, embeddings=embeddings)
+*/
+try
+{
+    // https://neo4j.com/docs/dotnet-manual/current/query-simple/#write
+    // https://neo4j.com/blog/developer/neo4j-data-access-for-your-dot-net-core-c-microservice/#:~:text=var%20query%20%3D%20%40%22MERGE,timestamp()%20RETURN%20true%22%3B
+    var result = await driver.ExecutableQuery(
+        """
+        WITH $chunks as chunks, range(0, size($chunks)) AS index
+        UNWIND index AS i
+        WITH i, chunks[i] AS chunk, $embeddings[i] AS embedding
+        MERGE (c:Chunk {index: i})
+        SET c.text = chunk, c.embedding = embedding
+        """)
+        .ExecuteAsync();
+
+    Console.WriteLine("Added chunks and embeddings.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error while adding chunks and embeddings: {ex.Message}");
+}
+
+#!csharp
+
+// Query all chunks
+/*
+records, _, _ = driver.execute_query("MATCH (c:Chunk) WHERE c.index = 0 RETURN c.embedding, c.text")
+
+print(records[0]["c.text"][0:30])
+print(records[0]["c.embedding"][0:3])
 */
 
 #!csharp
 
-//Can't do this because the Community edition only allows one database
+// Simple question
 /*
-const string dbName = "testDatabase";
+question = "At what time was Einstein really interested in experimental works?"
+question_embedding = embed([question])[0]
 
-using(var session = driver.AsyncSession())
-{
-    try
-    {
-        // Check if the database already exists
-        var checkDbResult = await session.ExecuteReadAsync(async tx =>
-        {
-            var result = await tx.RunAsync("SHOW DATABASES")
-            return await result.ToListAsync();
-        });
+query = '''
+CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) YIELD node AS hits, score
+RETURN hits.text AS text, score, hits.index AS index
+'''
+similar_records, _, _ = driver.execute_query(query, question_embedding=question_embedding, k=4)
 
-        bool dbExists = checkDbResult.Any(record => record["name"].As<string>() == dbName);
+for record in similar_records:
+    print(record["text"])
+    print(record["score"], record["index"])
+    print("======")*/
 
-        if (dbExists)
-        {
-            Console.WriteLine($"Database '{dbName}' already exists.");
-        }
-        else
-        {        
-            Console.WriteLine($"Database '{dbName}' does not exist. Proceeding to create it.");
-            var createDatabaseQuery = $"CREATE DATABASE {dbName}";
+#!csharp
 
-            await session.ExecuteWriteAsync(async tx =>
-            {
-                await tx.RunAsync(createDatabaseQuery);
-            });
+// Ask the LLM a question based on the context
+/*
+system_message = "You're en Einstein expert, but can only use the provided documents to respond to the questions."
+user_message = f"""
+Use the following documents to answer the question that will follow:
+{[doc["text"] for doc in similar_records]}
 
-            Console.WriteLine("Database 'myDatabase' created successfully!");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"An error occurred: {ex.Message}");
-    }
+---
+
+The question to answer using information only from the above documents: {question}
+"""
+
+print("Question:", question)
+
+stream = open_ai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ],
+    stream=True,
+)
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="")
+
+*/
+
+#!csharp
+
+// Hybrid query on the full-text index
+/*
+hybrid_query = '''
+CALL {
+    // vector index
+    CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) YIELD node, score
+    WITH collect({node:node, score:score}) AS nodes, max(score) AS max
+    UNWIND nodes AS n
+    // We use 0 as min
+    RETURN n.node AS node, (n.score / max) AS score
+    UNION
+    // keyword index
+    CALL db.index.fulltext.queryNodes('ftPdfChunk', $question, {limit: $k})
+    YIELD node, score
+    WITH collect({node:node, score:score}) AS nodes, max(score) AS max
+    UNWIND nodes AS n
+    // We use 0 as min
+    RETURN n.node AS node, (n.score / max) AS score
 }
+// dedup
+WITH node, max(score) AS score ORDER BY score DESC LIMIT $k
+RETURN node, score
+'''
+similar_hybrid_records, _, _ = driver.execute_query(hybrid_query, question_embedding=question_embedding, question=question, k=4)
+
+for record in similar_hybrid_records:
+    print(record["node"]["text"])
+    print(record["score"], record["node"]["index"])
+    print("======")
+*/
+
+#!csharp
+
+// RAG query
+/* 
+user_message = f"""
+Use the following documents to answer the question that will follow:
+{[doc["node"]["text"] for doc in similar_hybrid_records]}
+
+---
+
+The question to answer using information only from the above documents: {question}
+"""
+
+print("Question:", question)
+
+stream = open_ai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ],
+    stream=True,
+)
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="")
 */
 
 #!csharp
