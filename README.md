@@ -36,3 +36,12 @@ https://neo4j.com/docs/operations-manual/current/docker/introduction/
 The ServiceDefaults project was created by the Aspire template and there are a number of code analysis warnings in the project.
 Those warnings have been suppressed in the project file.
 
+
+## TODO
+
+- add a unit test project and start with theory tests for simple chunking
+- make the chunking IAsyncEnumerable based
+- add a service to the AppHost project that uses the chunking
+- - add a Blazor page for simple queries on the Movies data
+- add a service that takes the Neo4j driver directly and runs fixed queries based on user input
+- implement the repository pattern for Neo4j access
