@@ -1,8 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SK.GraphRag.Application.Services.Interfaces;
 
+[SuppressMessage("Design", "CA1040:Avoid empty interfaces",
+    Justification = "Temporary suppression order")]
 public interface IGraphDataService
 {
-    Task<List<string>> GetNodesAsync(CancellationToken cancellationToken = default);
-
-    Task<List<(string Source, string Target)>> GetEdgesAsync(CancellationToken cancellationToken = default);
 }
