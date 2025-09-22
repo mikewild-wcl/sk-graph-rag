@@ -11,4 +11,8 @@
     <PackageReference Include="Neo4j.Driver" Version="5.28.3" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <NoWarn>CS9124;</NoWarn> <!-- Parameter is captured into the state of the enclosing type and its value is also used to initialize a field -->
+  </PropertyGroup>
+
 </Project>

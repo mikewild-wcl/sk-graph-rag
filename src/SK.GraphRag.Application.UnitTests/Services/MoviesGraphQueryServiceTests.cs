@@ -1,5 +1,6 @@
-using SK.GraphRag.Application.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Neo4j.Driver;
+using SK.GraphRag.Application.Services;
 
 namespace SK.GraphRag.Application.UnitTests.Services;
 
@@ -12,7 +13,9 @@ public class MoviesGraphQueryServiceTests
     public MoviesGraphQueryServiceTests()
     {
         _mockDriver = new Mock<IDriver>();
-        _sut = new MoviesGraphQueryService(_mockDriver.Object);
+        _sut = new MoviesGraphQueryService(
+            _mockDriver.Object,
+            new NullLogger<MoviesGraphQueryService>());
     }
 
     [Fact]

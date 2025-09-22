@@ -2,7 +2,7 @@
 A space for learning GraphRAG with Semantic Kernel neo4j.
 
 
-## Graph database
+## Graph database - Neo4j
 
 How to get started with Neo4j see [Build applications with Neo4j and .NET](https://neo4j.com/docs/dotnet-manual/current/). 
 For a suggested approach to dependency injection see [Neo4j Data Access for Your .NET Core C# Microservice](https://neo4j.com/blog/developer/neo4j-data-access-for-your-dot-net-core-c-microservice/).
@@ -18,6 +18,13 @@ docker run -p 7474:7474 -p 7687:7687 -d -v $HOME/neo4j/data:/data -e NEO4J_AUTH=
 
 Some of the code in this project was inspired by the book Essential GraphRAG. The code for that book
 is at https://github.com/tomasonjo/kg-rag.
+
+### Cypher
+
+To set a parameter in Cypher in the neo4j browser:
+```
+:param name => 'Tom Hanks'
+```
 
 
 ## Docker
@@ -41,7 +48,13 @@ Those warnings have been suppressed in the project file.
 
 - add a unit test project and start with theory tests for simple chunking
 - make the chunking IAsyncEnumerable based
+    - [link text](https://stackoverflow.com/questions/21136753/read-a-very-large-file-by-chunks-and-not-line-by-line/21137097#21137097)
 - add a service to the AppHost project that uses the chunking
 - - add a Blazor page for simple queries on the Movies data
 - add a service that takes the Neo4j driver directly and runs fixed queries based on user input
 - implement the repository pattern for Neo4j access
+- Look at extracting and using UFO dataset
+    - See chapter 5 of [sql_book](https://github.com/cathytanimura/sql_book)
+    - [SQL book to R](https://iangow.github.io/sql_book/)
+    - [Import csv](https://stackoverflow.com/questions/15242757/import-csv-file-into-sql-server)
+    - 

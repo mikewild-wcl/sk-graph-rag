@@ -19,6 +19,6 @@ public class GraphDataServiceTests
     public async Task GetNodesAsync_ReturnsSampleNodes()
     {
         var nodes = await _sut.GetNodesAsync(TestContext.Current.CancellationToken);
-        nodes.Should().BeEquivalentTo(["NodeA", "NodeB", "NodeC"]);
+        nodes.Should().BeEquivalentTo("NodeA", "NodeB", "NodeC");
     }
 }
