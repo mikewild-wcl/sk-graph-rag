@@ -32,6 +32,13 @@ MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie)
 RETURN m.title AS movieTitle
 ```
 
+## Graph database - Memgraph
+
+If using Memgraph as a replacement for Neo4j, see:
+
+- https://stackoverflow.com/questions/74528361/how-can-i-connect-to-memgraph-from-my-c-sharp-application
+- https://memgraph.com/blog/how-to-build-a-flight-network-analysis-graph-asp-net-application-with-memgraph-c-sharp-and-d3-js
+
 
 ## Docker
 
@@ -56,11 +63,10 @@ Those warnings have been suppressed in the project file.
 - make the chunking IAsyncEnumerable based
     - [link text](https://stackoverflow.com/questions/21136753/read-a-very-large-file-by-chunks-and-not-line-by-line/21137097#21137097)
 - add a service to the AppHost project that uses the chunking
-- - add a Blazor page for simple queries on the Movies data
 - add a service that takes the Neo4j driver directly and runs fixed queries based on user input
 - implement the repository pattern for Neo4j access
 - Look at extracting and using UFO dataset
     - See chapter 5 of [sql_book](https://github.com/cathytanimura/sql_book)
     - [SQL book to R](https://iangow.github.io/sql_book/)
     - [Import csv](https://stackoverflow.com/questions/15242757/import-csv-file-into-sql-server)
-    - 
+    
