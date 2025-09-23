@@ -13,6 +13,9 @@ builder.Services
     .RegisterServices()
     .RegisterGraphDatabase(builder.Configuration);
 
+// Persist counter across navigations (per circuit/session)
+builder.Services.AddScoped<CounterState>();
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
