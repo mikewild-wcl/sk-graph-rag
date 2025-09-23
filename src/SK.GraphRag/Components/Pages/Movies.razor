@@ -1,0 +1,67 @@
+@page "/movies"
+@rendermode InteractiveServer
+@inject SK.GraphRag.Application.Services.Interfaces.IMoviesGraphQueryService MoviesService
+
+<PageTitle>Movies</PageTitle>
+
+<h3>Find Movies by Actor</h3>
+
+<div class="movie-search">
+    <label for="actor">Actor Name:</label>
+    <input id="actor" @bind="actorName" @bind:event="oninput" @onkeydown="HandleKeyDown" />
+    <button @onclick="SearchAsync" disabled="@isLoading">Search</button>
+</div>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (searched && movies is { Count: 0 })
+{
+    <p>No movies found for '@actorName'.</p>
+}
+else if (movies?.Count > 0)
+{
+    <ul>
+        @foreach (var movie in movies)
+        {
+            <li>@movie</li>
+        }
+    </ul>
+}
+
+@code {
+    private string actorName = string.Empty;
+    private List<string>? movies;
+    private bool isLoading;
+    private bool searched;
+
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(actorName))
+        {
+            movies = new();
+            searched = true;
+            return;
+        }
+
+        isLoading = true;
+        searched = true;
+        try
+        {
+            movies = await MoviesService.GetMoviesForActor(actorName);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchAsync();
+        }
+    }
+}

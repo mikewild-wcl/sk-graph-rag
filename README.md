@@ -26,6 +26,12 @@ To set a parameter in Cypher in the neo4j browser:
 :param name => 'Tom Hanks'
 ```
 
+You can then use the parameter in a query:
+```
+MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie)
+RETURN m.title AS movieTitle
+```
+
 
 ## Docker
 

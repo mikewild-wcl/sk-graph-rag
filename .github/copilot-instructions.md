@@ -10,6 +10,7 @@
 - Prefer async and await over synchronous code.
 - Never use CSS inline styles. Always use a CSS file.
 - When creating Web API projects, prefer minimal APIs project.
+- Constructor parameters must use camelCase (never PascalCase) even with primary constructor syntax; earlier deviations were corrected.
 
 
 ## Testing Guidelines

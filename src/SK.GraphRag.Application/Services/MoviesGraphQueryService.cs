@@ -11,6 +11,10 @@ public sealed class MoviesGraphQueryService(
     private readonly IDriver _driver = driver;
     private readonly ILogger<MoviesGraphQueryService> _logger = logger;
 
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, Exception?> _logQueryError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(1, nameof(MoviesGraphQueryService)),
+            "Error querying movies for actor {ActorName}");
+
     public async Task<List<string>> GetMoviesForActor(string actorName, CancellationToken cancellationToken = default)
     {
         var movieNames = new List<string>();
@@ -19,52 +23,23 @@ public sealed class MoviesGraphQueryService(
         {
             await _driver.VerifyConnectivityAsync().ConfigureAwait(false);
 
-            //await using var session = _driver.AsyncSession().ConfigureAwait(false);
-
-            var result = await driver.ExecutableQuery(@"
-                MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie)
-                RETURN m.title AS movieTitle
-                ")
+            var result = await _driver.ExecutableQuery(
+                @"MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie) RETURN m.title AS movieTitle")
                 .WithParameters(new { name = actorName })
                 .WithConfig(new QueryConfig(database: "neo4j"))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            // Loop through results and print people's name
-            foreach (var record in result.Result)
-            {
-                Console.WriteLine(record.Get<string>("name"));
-            }
-
-            /*
-            // Using mapping - 
-            var result = await driver.ExecutableQuery(@"
-                MATCH (p:Person)-[:KNOWS]->(:Person)
-                RETURN p.name AS name
-                ")
-                .WithConfig(new QueryConfig(database: "<database-name>"))
-                .WithMap(record => record["name"].As<string>())
-                .ExecuteAsync();
-            foreach (var name in result.Result) {
-                Console.WriteLine(name);
-            }             
-            */
-
             movieNames.AddRange(result.Result.Select(r => r.Get<string>("movieTitle")));
-            //var result = await session.RunAsync(query, new { actorName }).ConfigureAwait(false);
-            //await result.ForEachAsync(record =>
-            //{
-            //    movieNames.Add(record["movieTitle"].As<string>());
-            //}, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error querying movies for actor {ActorName}", actorName);
+            _logQueryError(_logger, actorName, ex);
             throw;
         }
         finally
         {
-            /* _driver.CloseAsync(); */
+            // await _driver.CloseAsync().ConfigureAwait(false);
         }
 
         return movieNames;
