@@ -13,8 +13,9 @@ builder.Services
     .RegisterServices()
     .RegisterGraphDatabase(builder.Configuration);
 
-// Persist counter across navigations (per circuit/session)
+// Persist state across navigations (per circuit/session)
 builder.Services.AddScoped<CounterState>();
+builder.Services.AddScoped<MoviesState>();
 
 var app = builder.Build();
 

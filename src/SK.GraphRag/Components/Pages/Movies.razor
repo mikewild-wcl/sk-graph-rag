@@ -1,6 +1,7 @@
 @page "/movies"
 @rendermode InteractiveServer
 @inject SK.GraphRag.Application.Services.Interfaces.IMoviesGraphQueryService MoviesService
+@inject MoviesState MoviesState
 
 <PageTitle>Movies</PageTitle>
 
@@ -10,20 +11,24 @@
     <label for="actor">Actor Name:</label>
     <input id="actor" @bind="actorName" @bind:event="oninput" @onkeydown="HandleKeyDown" />
     <button @onclick="SearchAsync" disabled="@isLoading">Search</button>
+    @if (MoviesState.HasSearched && MoviesState.Movies.Count > 0)
+    {
+        <button class="btn btn-link" @onclick="ClearAsync">Clear</button>
+    }
 </div>
 
 @if (isLoading)
 {
     <p>Loading...</p>
 }
-else if (searched && movies is { Count: 0 })
+else if (MoviesState.HasSearched && MoviesState.Movies.Count == 0)
 {
     <p>No movies found for '@actorName'.</p>
 }
-else if (movies?.Count > 0)
+else if (MoviesState.Movies.Count > 0)
 {
     <ul>
-        @foreach (var movie in movies)
+        @foreach (var movie in MoviesState.Movies)
         {
             <li>@movie</li>
         }
@@ -32,29 +37,41 @@ else if (movies?.Count > 0)
 
 @code {
     private string actorName = string.Empty;
-    private List<string>? movies;
     private bool isLoading;
-    private bool searched;
+
+    protected override void OnInitialized()
+    {
+        if (MoviesState.HasSearched)
+        {
+            actorName = MoviesState.LastActorName;
+        }
+    }
 
     private async Task SearchAsync()
     {
         if (string.IsNullOrWhiteSpace(actorName))
         {
-            movies = new();
-            searched = true;
+            MoviesState.Clear();
             return;
         }
 
         isLoading = true;
-        searched = true;
         try
         {
-            movies = await MoviesService.GetMoviesForActor(actorName);
+            var results = await MoviesService.GetMoviesForActor(actorName);
+            MoviesState.SetResults(actorName, results);
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+    private Task ClearAsync()
+    {
+        MoviesState.Clear();
+        actorName = string.Empty;
+        return Task.CompletedTask;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)

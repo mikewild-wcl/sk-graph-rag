@@ -4,5 +4,6 @@ namespace SK.GraphRag.Components;
 internal sealed class CounterState
 {
     public int CurrentCount { get; private set; }
+
     public void Increment() => CurrentCount++;
 }
