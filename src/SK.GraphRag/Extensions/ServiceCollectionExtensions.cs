@@ -10,6 +10,7 @@ internal static class ServiceCollectionExtensions
     {
         services.AddSingleton<IGraphDataService, GraphDataService>();
         services.AddScoped<IMoviesGraphQueryService, MoviesGraphQueryService>();
+        services.AddScoped<IEinsteinQueryService, EinsteinQueryService>();
 
         return services;
     }
