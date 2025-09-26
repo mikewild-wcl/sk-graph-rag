@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SK.GraphRag.SharedConstants\SK.GraphRag.SharedConstants.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\SK.GraphRag\SK.GraphRag.csproj" />
   </ItemGroup>
 

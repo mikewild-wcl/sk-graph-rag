@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SK.GraphRag.Application\SK.GraphRag.Application.csproj" />
     <ProjectReference Include="..\SK.GraphRag.ServiceDefaults\SK.GraphRag.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\SK.GraphRag.SharedConstants\SK.GraphRag.SharedConstants.csproj" />
   </ItemGroup>
 
 </Project>

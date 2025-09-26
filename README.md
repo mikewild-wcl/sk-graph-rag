@@ -1,6 +1,11 @@
 # sk-graph-rag
 A space for learning GraphRAG with Semantic Kernel neo4j.
 
+## Aspire Parameters
+
+Parameters in the Aspire appsettings.json file `Parameters` section
+follow a convention of `SectionName-SettingName` with the hyphen acting as a separator.
+The same pattern is used when passing the resources , with : used as the seperator.
 
 ## Graph database - Neo4j
 

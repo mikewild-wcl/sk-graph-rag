@@ -1,17 +1,18 @@
 using SK.GraphRag.AppHost.Extensions;
+using SK.GraphRag.SharedConstants;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var graphDBProvider = builder.AddParameter("GraphDatabaseProvider");
-var neo4jConnection = builder.AddParameter("Neo4jConnection");
-var neo4jUser = builder.AddParameter("Neo4jUser");
-var neo4jPassword = builder.AddParameter("Neo4jPassword", secret: true);
+var graphDBProvider = builder.AddParameter($"{ResourceNames.GraphDatabaseSection}-{ResourceNames.DatabaseProvider}");
+var neo4jConnection = builder.AddParameter($"{ResourceNames.GraphDatabaseSection}-{ResourceNames.Connection}");
+var neo4jUser = builder.AddParameter($"{ResourceNames.GraphDatabaseSection}-{ResourceNames.User}");
+var neo4jPassword = builder.AddParameter($"{ResourceNames.GraphDatabaseSection}-{ResourceNames.Password}", secret: true);
 
-var azureOpenAIEndpoint = builder.AddParameter("AzureOpenAIEndpoint");
-var azureOpenAIApiKey = builder.AddParameter("AzureOpenAIApiKey", secret: true);
-var azureOpenAIDeploymentName = builder.AddParameter("AzureOpenAIDeploymentName");
-var azureOpenAIEmbeddingDeploymentName = builder.AddParameter("AzureOpenAIEmbeddingDeploymentName");
-var azureOpenAITimeout = builder.AddParameter("AzureOpenAITimeout");
+var azureOpenAIEndpoint = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.Endpoint}");
+var azureOpenAIApiKey = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.ApiKey}", secret: true);
+var azureOpenAIDeploymentName = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.DeploymentName}");
+var azureOpenAIEmbeddingDeploymentName = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.EmbeddingDeploymentName}");
+var azureOpenAITimeout = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.Timeout}");
 
 if(graphDBProvider.GetValue() == "neo4j")
 {
@@ -21,21 +22,20 @@ if(graphDBProvider.GetValue() == "neo4j")
         .WithEndpoint(7687, scheme:"bolt", targetPort: 7687)
         .WithEnvironment("NEO4J_AUTH", $"{neo4jUser.GetValue()}/{neo4jPassword.GetValue()}");
 }
-
-if (graphDBProvider.GetValue() == "memgraph")
+else if (graphDBProvider.GetValue() == "memgraph")
 {
-    // Compose up memgraph 
+    // Compose memgraph 
 }
 
-builder.AddProject<Projects.SK_GraphRag>("sk-graphrag")
-    .WithEnvironment("GraphDatabaseProvider", graphDBProvider)
-    .WithEnvironment("Neo4j:Connection", neo4jConnection)
-    .WithEnvironment("Neo4j:User", neo4jUser)
-    .WithEnvironment("Neo4j:Password", neo4jPassword)
-    .WithEnvironment("AzureOpenAI:Endpoint", azureOpenAIEndpoint)
-    .WithEnvironment("AzureOpenAI:ApiKey", azureOpenAIApiKey)
-    .WithEnvironment("AzureOpenAI:DeploymentName", azureOpenAIDeploymentName)
-    .WithEnvironment("AzureOpenAI:EmbeddingDeploymentName", azureOpenAIEmbeddingDeploymentName)
-    .WithEnvironment("AzureOpenAI:Timeout", azureOpenAITimeout);
+builder.AddProject<Projects.SK_GraphRag>(ProjectNames.GraphRagBlazorApp)
+    .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.DatabaseProvider}", graphDBProvider)
+    .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.Connection}", neo4jConnection)
+    .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.User}", neo4jUser)
+    .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.Password}", neo4jPassword)
+    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.Endpoint}", azureOpenAIEndpoint)
+    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.ApiKey}", azureOpenAIApiKey)
+    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.DeploymentName}", azureOpenAIDeploymentName)
+    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.EmbeddingDeploymentName}", azureOpenAIEmbeddingDeploymentName)
+    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.Timeout}", azureOpenAITimeout);
 
 await builder.Build().RunAsync().ConfigureAwait(false);

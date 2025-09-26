@@ -2,6 +2,7 @@
   <Folder Name="/Aspire/">
     <Project Path="SK.GraphRag.AppHost/SK.GraphRag.AppHost.csproj" />
     <Project Path="SK.GraphRag.ServiceDefaults/SK.GraphRag.ServiceDefaults.csproj" />
+    <Project Path="SK.GraphRag.SharedConstants/SK.GraphRag.SharedConstants.csproj" Id="b63bec57-61ef-4550-86e3-7762d78fa6fa" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="SK.GraphRag.Application.UnitTests/SK.GraphRag.Application.UnitTests.csproj" />
