@@ -10,6 +10,7 @@ public static class ResourceNames
     public const string Timeout = "Timeout";
 
     public const string GraphDatabaseSection = "GraphDatabase";
+    public const string CreateInDocker = "CreateInDocker";
     public const string DatabaseProvider = "DatabaseProvider";
     public const string Connection = "Connection";
     public const string User = "User";
