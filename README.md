@@ -16,13 +16,38 @@ Neo4j can be run locally using Docker. See https://neo4j.com/docs/operations-man
 
 A dockerfile is included in the AppHost project and this will start Neo4j when the application starts.
 
-To start Neo4j in docker from a command line use the following (replace the password!):
+To start Neo4j in docker from a command line use the following (*backticks used for multi-line commands in Windows Terminal*):
 ```
-docker run -p 7474:7474 -p 7687:7687 -d -v $HOME/neo4j/data:/data -e NEO4J_AUTH=neo4j/password -e 'NEO4J_PLUGINS=["apoc", "graph-data-science"]' neo4j:2025.08.0 
+docker volume create neo4j_data `
+  && docker volume create neo4j_logs `
+  && docker volume create neo4j_import `
+  && docker volume create neo4j_plugins
+
+docker run -d --name neo4j `
+  -p 7474:7474 -p 7687:7687 `
+  -v neo4j_data:/data `
+  -v neo4j_logs:/logs `
+  -v neo4j_import:/import `
+  -v neo4j_plugins:/plugins `
+  -e NEO4J_AUTH=neo4j/password `
+  -e 'NEO4J_PLUGINS=["apoc", "apoc-extended", "graph-data-science"]' `
+  -e apoc.import.file.enabled=true `
+  -e apoc.import.file.use_neo4j_config=false `
+  neo4j:2025.09.0
+```
+
+The Neo4j browser can be accessed at http://localhost:7474/browser/
+
+Delete data by running this in the Neo4j data browser:
+```
+MATCH (n) DETACH DELETE n;
+CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *
 ```
 
 Some of the code in this project was inspired by the book Essential GraphRAG. The code for that book
 is at https://github.com/tomasonjo/kg-rag.
+
+Datasets for the earlier book can be found in https://github.com/tomasonjo/graphs-network-science/tree/main.
 
 ### Cypher
 

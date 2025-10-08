@@ -1,5 +1,5 @@
 # Dockerfile to run Neo4j with APOC and Graph Data Science plugins for local/dev use
-FROM neo4j:2025.08.0
+FROM neo4j:2025.09.0
 
 # Build-time user and password (defaults 'neo4j' and 'test') can be overridden with --build-arg or at runtime via 
 ENV NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
