@@ -1,0 +1,26 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp","languageName":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!csharp
+
+// Scratch.... load a file and process it
+
+using System.IO;
+
+var filePath = @"C:\dev_mike\sk-graph-rag\cypher\movies-graphrag-book.cypher";
+var lines = File.ReadAllLines(filePath);
+var lineNumber = 0;
+foreach (var line in lines)
+{
+    ++lineNumber;
+    if(line.TrimStart().StartsWith("//") ||   // Skip comments and empty lines
+      string.IsNullOrWhiteSpace(line) ||      // Skip  empty lines
+      line.StartsWith("CREATE CONSTRAINT")) // Skip constraints
+       continue; 
+
+    if(!line.StartsWith("MERGE")) 
+    {
+        Console.WriteLine($"{(lineNumber):  #}: {line}");
+    }
+}

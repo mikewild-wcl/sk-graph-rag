@@ -10,12 +10,12 @@ A simple demo of vectors based on chapter 2 of Essential GraphRAG. The original 
 
 #!csharp
 
-#r "nuget: Microsoft.Extensions.Configuration, 9.0.9"
-#r "nuget: Microsoft.Extensions.Configuration.Json, 9.0.7"
-#r "nuget: Microsoft.SemanticKernel, 1.65.0"
-#r "nuget: Neo4j.Driver, 5.28.3"
-#r "nuget: PdfPig, 0.1.11"
-#r "nuget: System.Net.Http, 4.3.4"
+#r "nuget:Microsoft.Extensions.Configuration, 9.0.9"
+#r "nuget:Microsoft.Extensions.Configuration.Json, 9.0.7"
+#r "nuget:Microsoft.SemanticKernel, 1.65.0"
+#r "nuget:Neo4j.Driver, 5.28.3"
+#r "nuget:PdfPig, 0.1.11"
+#r "nuget:System.Net.Http, 4.3.4"
 
 // NOTE: System.Linq.Async required for IAsyncEnumerable support, but deprecated in .net 10
 #r "nuget:System.Linq.Async, 6.0.3"
@@ -42,9 +42,7 @@ Console.WriteLine($"Neo4j details: Connection: {connectionUri}, auth user: {user
 
 #!csharp
 
-// Create driver and database
-
-password = "password"; // Workaround for incorrect default password in docker
+// Create driver
 
 var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
 await driver.VerifyConnectivityAsync();

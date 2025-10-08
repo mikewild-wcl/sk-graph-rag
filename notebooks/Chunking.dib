@@ -10,7 +10,7 @@
 
 //TODO: Will use tiktoken to count tokems
 #r "nuget:Tiktoken, 2.2.0"
-#r "nuget: System.Net.Http, 4.3.4"
+#r "nuget:System.Net.Http, 4.3.4"
 
 #!csharp
 

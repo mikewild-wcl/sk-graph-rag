@@ -10,8 +10,8 @@ Contains some helpers for Neo4j, including code to clear data
 
 #!csharp
 
-#r "nuget: Microsoft.Extensions.Configuration, 9.0.9"
-#r "nuget: Microsoft.Extensions.Configuration.Json, 9.0.7"
+#r "nuget:Microsoft.Extensions.Configuration, 9.0.9"
+#r "nuget:Microsoft.Extensions.Configuration.Json, 9.0.7"
 #r "nuget:Neo4j.Driver, 5.28.3"
 
 using Microsoft.Extensions.Configuration;
@@ -50,14 +50,15 @@ using (var session = driver.AsyncSession())
     await session.ExecuteWriteAsync(async tx =>
     {
         // Delete all nodes and relationships.
-        var result1 = await tx.RunAsync("MATCH (n) DETACH DELETE n");
+        await tx.RunAsync("MATCH (n) DETACH DELETE n");
         Console.WriteLine("Deleted all nodes and relationships.");
-        Console.WriteLine(result1);
+    });
 
+    await session.ExecuteWriteAsync(async tx =>
+    {
         // All indexes and constraints.
-        var result2 = await tx.RunAsync("CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *");
+        await tx.RunAsync("CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *");
         Console.WriteLine("Deleted all indexes and constraints.");
-        Console.WriteLine(result2);
     });
 }
 
