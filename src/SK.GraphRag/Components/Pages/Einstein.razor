@@ -1,22 +1,22 @@
 @page "/einstein"
 @rendermode InteractiveServer
 @inject SK.GraphRag.Application.Services.Interfaces.IEinsteinQueryService EinsteinService
+@inject EinsteinState State
 
 <PageTitle>Einstein Chat</PageTitle>
 
 <h1>Ask About Einstein</h1>
-
-<p>This component queries a Graph database for information.</p>
+<p>This component queries a knowledge source (stubbed service) for Einstein facts.</p>
 
 <div class="chat-panel">
     <div class="qa-list">
-        @if (qaHistory.Count == 0)
+        @if (!State.HasHistory)
         {
             <p class="placeholder">Ask a question about Albert Einstein (e.g. "When was Einstein born?")</p>
         }
         else
         {
-            @foreach (var item in qaHistory)
+            @foreach (var item in State.History)
             {
                 <div class="q"><strong>You:</strong> @item.Question</div>
                 <div class="a"><strong>Einstein:</strong> @item.Answer</div>
@@ -24,39 +24,64 @@
         }
     </div>
     <div class="input-row">
-        <input placeholder="Type your question..." @bind="currentQuestion" @bind:event="oninput" @onkeydown="HandleKeyDown" />
-        <button @onclick="AskAsync" disabled="@isLoading || string.IsNullOrWhiteSpace(currentQuestion)">Ask</button>
+        <input placeholder="Type your question..."
+               @bind="State.CurrentQuestion"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown" />
+        <button @onclick="Ask"
+                disabled="@(State.IsLoading || string.IsNullOrWhiteSpace(State.CurrentQuestion))">
+            Ask
+        </button>
+        <button @onclick="LoadData" disabled="@State.IsLoading">Load</button>
+        @if (State.HasHistory)
+        {
+            <button class="btn btn-link" @onclick="ClearAsync" disabled="@State.IsLoading">Clear</button>
+        }
     </div>
 </div>
 
 @code {
-    private string currentQuestion = string.Empty;
-    private bool isLoading;
-
-    private readonly List<(string Question, string Answer)> qaHistory = new();
-
-    private async Task AskAsync()
+    private async Task Ask()
     {
-        if (string.IsNullOrWhiteSpace(currentQuestion)) return;
-        var question = currentQuestion;
-        isLoading = true;
+        if (string.IsNullOrWhiteSpace(State.CurrentQuestion)) return;
+        var question = State.CurrentQuestion;
+        State.SetLoading(true);
         try
         {
-            var answer = await EinsteinService.AskAsync(question);
-            qaHistory.Add((question, answer));
-            currentQuestion = string.Empty;
+            var answer = await EinsteinService.Ask(question);
+            State.AddExchange(question, answer);
+            State.CurrentQuestion = string.Empty;
         }
         finally
         {
-            isLoading = false;
+            State.SetLoading(false);
         }
+    }
+
+    private async Task LoadData()
+    {
+        State.SetLoading(true);
+        try
+        {
+            await EinsteinService.LoadData();
+        }
+        finally
+        {
+            State.SetLoading(false);
+        }
+    }
+
+    private Task ClearAsync()
+    {
+        State.Clear();
+        return Task.CompletedTask;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await AskAsync();
+            await Ask();
         }
     }
 }

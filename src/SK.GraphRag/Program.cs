@@ -16,6 +16,7 @@ builder.Services
 // Persist state across navigations (per circuit/session)
 builder.Services.AddScoped<CounterState>();
 builder.Services.AddScoped<MoviesState>();
+builder.Services.AddScoped<EinsteinState>(); // Added
 
 var app = builder.Build();
 
@@ -30,10 +31,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAntiforgery();
-
 app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

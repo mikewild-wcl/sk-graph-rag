@@ -1,10 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SK.GraphRag.Components;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Activated by DI container")]
+[SuppressMessage("Performance", "CA1812", Justification = "Activated by DI container")]
 internal sealed class MoviesState
 {
     public string LastActorName { get; private set; } = string.Empty;
-    public List<string> Movies { get; } = new();
+    public List<string> Movies { get; } = [];
     public bool HasSearched { get; private set; }
 
     public void SetResults(string actorName, IEnumerable<string> movies)
