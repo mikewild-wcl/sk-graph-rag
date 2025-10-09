@@ -25,6 +25,7 @@ using System.IO;
 #!csharp
 
 const string DB_NAME = "neo4j"; // Default database name in Neo4j
+var _clearGraphDB = false; // Set to true to clear the graph database before loading data
 
 //Get configuration
 var config = new ConfigurationBuilder()
@@ -41,46 +42,40 @@ $"Neo4j details: Connection: {connectionUri}; auth user: {user}/{password}"
 #!csharp
 
 // Create driver
-
 var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
 await driver.VerifyConnectivityAsync();
 Console.WriteLine("Connection established.");
+
+#!pwsh
+
+# Copy the cypher file into the Docker container
+docker cp "C:\dev_mike\sk-graph-rag\cypher\movies-graphrag-book-download.cypher" neo4j:/import
 
 #!csharp
 
 try
 {
-    //var cypherFilePath =  @"..\cypher\movies-graphrag-book-download.cypher";
-    /*
-        To copy files into the container:
-        ```
-        docker cp "C:\dev_mike\sk-graph-rag\cypher\movies-graphrag-book-download.cypher" neo4j:/import
-        ```
-    */
     var cypherFilePath = "/import/movies-graphrag-book-download.cypher";
-    //var cypherFilePath =  @"C:\dev_mike\sk-graph-rag\cypher\movies-graphrag-book-download.cypher";
-
-    // if (!File.Exists(cypherFilePath))
-    // {
-    //     throw new FileNotFoundException($"Cypher file not found: {cypherFilePath}");
-    // }
 
     using (var session = driver.AsyncSession())
     {
-        await session.ExecuteWriteAsync(async tx =>
+        if (_clearGraphDB)
         {
-            // Delete all nodes and relationships.
-            // See https://stackoverflow.com/questions/22357379/neo4j-how-to-drop-all-constraints
-            await tx.RunAsync("MATCH (n) DETACH DELETE n");
-            Console.WriteLine("Deleted all nodes.");
-        });
+            await session.ExecuteWriteAsync(async tx =>
+            {
+                // Delete all nodes and relationships.
+                // See https://stackoverflow.com/questions/22357379/neo4j-how-to-drop-all-constraints
+                await tx.RunAsync("MATCH (n) DETACH DELETE n");
+                Console.WriteLine("Deleted all nodes.");
+            });
 
-        await session.ExecuteWriteAsync(async tx =>
-        {
-            Console.WriteLine("Deleting indexes.");
-            await tx.RunAsync("CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *");
-            Console.WriteLine("Deleted all indexes and constraints.");
-        });
+            await session.ExecuteWriteAsync(async tx =>
+            {
+                Console.WriteLine("Deleting indexes.");
+                await tx.RunAsync("CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *");
+                Console.WriteLine("Deleted all indexes and constraints.");
+            });
+        }
         
         await session.ExecuteWriteAsync(async tx =>
         {

@@ -1,0 +1,251 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp","languageName":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!markdown
+
+# Load Twitter dataset into Neo4j
+
+Requires a running Neo4j instance.
+
+Uses sample data from Graph Algorithms for Data Science chapter 3.
+
+#!csharp
+
+#r "nuget:Microsoft.Extensions.Configuration, 9.0.9"
+#r "nuget:Microsoft.Extensions.Configuration.Json, 9.0.7"
+#r "nuget:Neo4j.Driver, 5.28.3"
+#r "nuget:System.Net.Http, 4.3.4"
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+using Neo4j.Driver;
+using System.IO;
+
+#!csharp
+
+const string DB_NAME = "neo4j"; // Default database name in Neo4j
+var _clearGraphDB = false; // Set to true to clear the graph database before loading data
+
+//Get configuration
+var config = new ConfigurationBuilder()
+    .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"))
+    .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.Development.json"), optional: true)
+    .Build();
+
+var user = config["Neo4j:User"];
+var password = config["Neo4j:Password"];
+var connectionUri = config["Neo4j:Connection"];
+
+$"Neo4j details: Connection: {connectionUri}; auth user: {user}/{password}"
+
+#!csharp
+
+// Create driver
+var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
+await driver.VerifyConnectivityAsync();
+Console.WriteLine("Connection established.");
+
+#!csharp
+
+if (_clearGraphDB)
+{
+    // Clear existing data
+    using (var session = driver.AsyncSession())
+    {
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            await tx.RunAsync("MATCH (n) DETACH DELETE n");
+            Console.WriteLine("Deleted all nodes.");
+        });
+
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            await tx.RunAsync("CALL apoc.schema.assert({},{},true) YIELD label, key RETURN *");
+            Console.WriteLine("Deleted all indexes and constraints.");
+        });
+    }
+}
+
+#!csharp
+
+try
+{
+    using (var session = driver.AsyncSession())
+    {
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            await tx.RunAsync("CREATE CONSTRAINT IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE;");
+            await tx.RunAsync("CREATE CONSTRAINT IF NOT EXISTS FOR (p:Tweet) REQUIRE p.id IS UNIQUE;");
+            Console.WriteLine("Created constraints.");
+        });
+
+        await session.ExecuteReadAsync(async tx =>
+        {
+            var result = await tx.RunAsync("SHOW CONSTRAINTS");
+            var records = await result.ToListAsync();
+            Console.WriteLine("Current constraints:");
+            foreach (var record in records)
+            {
+                foreach (var val in record.Values)
+                {
+                    Console.WriteLine($"Value: {val}");
+                }
+            }
+        });
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
+
+#!csharp
+
+try
+{
+    using (var session = driver.AsyncSession())
+    {
+        await session.ExecuteReadAsync(async tx =>
+        {
+            //https://raw.githubusercontent.com/tomasonjo/graphs-network-science/main/dataset/twitter/users.csv
+            var result = await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/39JYakC" AS row
+                WITH row
+                LIMIT 5
+                RETURN row
+                """);
+            var records = await result.ToListAsync();
+            Console.WriteLine("Loaded csv:");
+            foreach (var record in records)
+            {
+                foreach (var val in record.Values)
+                {
+                    Console.WriteLine($"Value: {val.Key} = {val.Value}");
+                    foreach (var kvp in val.Value as IDictionary<string, object>)
+                    {
+                        Console.WriteLine($"  -: {kvp.Key} = {kvp.Value}");
+                    }
+                }
+            }
+        });
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
+
+#!csharp
+
+try
+{
+    using (var session = driver.AsyncSession())
+    {
+        // Can delete by
+        // MATCH (u:User) DETACH DELETE u
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            //Import users
+            await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/39JYakC" AS row
+                MERGE (u:User {id:row.id})
+                ON CREATE SET u.name = row.name,
+                              u.username = row.username,
+                              u.registeredAt = datetime(row.createdAt)
+                """);
+            Console.WriteLine("Created users.");
+        });
+
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            // Import the follower network
+            // Prepend ":auto" to the query if running in the neo4j browser
+            // Removed IN TRANSACTIONS from the CALL, because we are already in an explicit transaction
+            await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/3n08lEL" AS row
+                CALL {
+                  WITH row
+                  MATCH (s:User {id:row.source})
+                    MATCH (t:User {id:row.target})
+                  MERGE (s)-[:FOLLOWS]->(t)
+                }
+                """);
+            Console.WriteLine("Created follower network.");
+        });
+
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            // Import tweets
+            // Prepend ":auto" to the query if running in the neo4j browser
+            // Removed IN TRANSACTIONS from the CALL, because we are already in an explicit transaction
+            await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/3y3ODyc" AS row
+                CALL {
+                  WITH row
+                  MATCH (a:User{id:row.author})
+                  MERGE (p:Tweet{id:row.id})
+                  ON CREATE SET p.text = row.text,
+                                p.createdAt = datetime(row.createdAt)
+                      MERGE (a)-[:PUBLISH]->(p)
+                }
+                """);
+            Console.WriteLine("Created tweets.");
+        });
+
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            // Import mentions
+            await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/3tINZ6D" AS row
+                MATCH (t:Tweet {id:row.post})
+                MATCH (u:User {id:row.user})
+                MERGE (t)-[:MENTIONS]->(u);
+                """);
+            Console.WriteLine("Created mentions.");
+        });
+
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            // Import retweets relationships
+            await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/3QyDrRl" AS row
+                MATCH (source:Tweet {id:row.source})
+                MATCH (target:Tweet {id:row.target})
+                MERGE (source)-[:RETWEETS]->(target);
+                """);
+            Console.WriteLine("Created retweets relationships.");
+        });
+
+        await session.ExecuteWriteAsync(async tx =>
+        {
+            // Import in_reply_to relationshiops
+            await tx.RunAsync(
+                """
+                LOAD CSV WITH HEADERS FROM "https://bit.ly/3b9Wgdx" AS row
+                MATCH (source:Tweet {id:row.source})
+                MATCH (target:Tweet {id:row.target})
+                MERGE (source)-[:IN_REPLY_TO]->(target);
+                """);
+            Console.WriteLine("Created reply relationships.");
+        });
+
+        // Display the schema with
+        // CALL db.schema.visualization()
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
+
+#!csharp
+
+// Cleanup
+await driver.DisposeAsync();
