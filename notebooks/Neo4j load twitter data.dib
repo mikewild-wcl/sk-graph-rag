@@ -235,9 +235,6 @@ try
                 """);
             Console.WriteLine("Created reply relationships.");
         });
-
-        // Display the schema with
-        // CALL db.schema.visualization()
     }
 }
 catch (Exception ex)
@@ -249,3 +246,176 @@ catch (Exception ex)
 
 // Cleanup
 await driver.DisposeAsync();
+
+#!markdown
+
+## Exploring the Twitter network
+
+Cypher queries for use in the Neo4j browser.
+
+##### Display the schema
+```Cypher
+CALL db.schema.visualization()
+```
+
+##### Visualise FOLLOWS relationships
+This will also be generated when clicking on the FOLLOWS relationship in the Database tab.
+```Cypher
+MATCH p=()-[r:FOLLOWS]->()
+RETURN p LIMIT 25;
+```
+
+##### Aggregation queries
+
+Count nodes
+```Cypher
+MATCH (n) 
+RETURN count(n) AS numberOfNodes
+```
+
+Users and users with registered dates
+```Cypher
+MATCH (u:User)
+RETURN count(*) AS numberOfUsers,
+       count(u.registeredAt) AS numberOfUserWithRegisteredAtDate
+
+```
+
+Ratio of non-null values of registerAt
+```Cypher
+MATCH (u:User)
+WITH count(*) AS numberOfRows,
+       count(u.registeredAt) AS numberOfUserWithRegisteredAtDate
+RETURN round(toFloat(numberOfUserWithRegisteredAtDate) / numberOfRows * 100, 2) AS result
+```
+
+Count all labels
+```Cypher
+MATCH (n)
+RETURN labels(n) AS labels,
+        count(n) AS count;
+```
+
+##### Time aggregation queries
+
+Min/max dates
+```Cypher
+MATCH (t:Tweet) 
+RETURN min(t.createdAt) AS earliestDate,
+       max(t.createdAt) AS lastDate
+```
+
+Datetime attributes
+```Cypher
+MATCH (t:Tweet)
+WITH t LIMIT 1
+RETURN t.createdAt.year AS year,
+       t.createdAt.month AS month,
+       t.createdAt.day AS day,
+       t.createdAt.epochSeconds AS epochSeconds
+```
+
+##### Filtering graph patterns
+
+Count mentioned users
+```Cypher
+MATCH (u:User)<-[:MENTIONS]-(:Tweet)
+RETURN count(u) AS countOfMentionedUsers
+```
+
+Distinct users who were mentioned
+```Cypher
+MATCH (u:User)<-[:MENTIONS]-(:Tweet)
+RETURN count(u) AS numberOfOccurences,
+       count(distinct u) AS numberOfDistinctUsers
+```
+
+Distinct users who were mentioned in tweets - using WHERE
+```Cypher
+MATCH (u:User)
+WHERE EXISTS { (u)<-[:MENTIONS]-() }
+RETURN count(u) AS numberOfDistinctUsers
+```
+
+Distinct users who were mentioned but discounting retweets
+```Cypher
+MATCH (u:User)
+WHERE EXISTS { (u)<-[:MENTIONS]-() } AND
+  NOT EXISTS { (u)<-[:PUBLISH]-() }
+RETURN count(u) AS numberOfDistinctUsers
+```
+
+Users mentioned by in tweet and discounting retweet mentions
+```Cypher
+MATCH (u:User)-[:PUBLISH]->(t:Tweet)
+WHERE EXISTS { (t)<-[RETWEETS]-() }
+WITH u, count(*) AS numberOfRetweets
+ORDER BY numberOfRetweets DESC
+RETURN u.username AS user, numberOfRetweets
+LIMIT 5
+```
+
+Top 5 users with the most distinct tweets retweeted
+```Cypher
+MATCH (u:User)-[:PUBLISH]->(t:Tweet)
+WHERE EXISTS {
+    (another)<-[RETWEET]-(tweet)
+}
+WITH u, count(*) AS numberOfRetweets
+ORDER BY numberOfRetweets DESC
+RETURN u.username AS user, numberOfRetweets
+LIMIT 5
+```
+
+Top 5 most mentioned users
+```Cypher
+MATCH (u:User)<-[:MENTIONS]-(:Tweet)
+WITH u, count(*) AS mentions
+ORDER BY mentions DESC LIMIT 5
+RETURN u.username AS user, mentions
+```
+
+Convenient way of retrieving top 5 most mentioned users by not increasing main query cardinality
+```Cypher
+MATCH (u:User)
+WITH u, count { (u)<-[:MENTIONS]-() } AS mentions
+ORDER BY mentions DESC LIMIT 5
+RETURN u.username AS user, mentions
+```
+
+##### Multiple aggregations in sequence
+```Cypher
+MATCH (u:User)
+MATCH (t:Tweet)
+RETURN count(*) AS numberOfRows,
+       count(*) AS numberOfUsers,
+       count(*) AS numberOfTweets
+```
+
+```Cypher
+MATCH (u:User)
+WITH count(u) AS countOfUsers
+MATCH (t:Tweet)
+RETURN count(*) AS numberOfRows,
+       countOfUsers,
+       count(t) AS countOfTweets
+```
+
+Distribution of mentions for a user
+```Cypher
+:param name => 'IainLJBrown';
+:param name => 'SuzanneC0leman';
+
+MATCH (u:User)
+WHERE u.username = $name
+OPTIONAL MATCH (u)-[:PUBLISH]->(rt)<-[:RETWEETS]-()
+WITH u, count(rt) AS numberOfRetweets
+OPTIONAL MATCH (u)<-[:MENTIONS]-(t)
+WHERE NOT (t)-[:RETWEETS]->()
+WITH u, numberOfRetweets, count(t) AS mentionsInOriginalTweets
+OPTIONAL MATCH (u)<-[:MENTIONS]-(ort)
+WHERE (ort)-[:RETWEETS]->() AND
+  NOT (ort)-[:RETWEETS]->()<-[:PUBLISH]-(u)
+WITH u, numberOfRetweets, mentionsInOriginalTweets, count(ort) AS mentionsInRetweets
+RETURN u.username, numberOfRetweets, mentionsInOriginalTweets, mentionsInRetweets
+```
