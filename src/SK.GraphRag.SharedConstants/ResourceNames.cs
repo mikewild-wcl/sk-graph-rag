@@ -11,9 +11,11 @@ public static class ResourceNames
 
     public const string GraphDatabaseSection = "GraphDatabase";
     public const string CreateInDocker = "CreateInDocker";
-    public const string DatabaseProvider = "DatabaseProvider";
+    public const string Provider = "Provider";
     public const string Connection = "Connection";
     public const string User = "User";
     public const string Password = "Password";
-    public const string MoviesDb = "MoviesDb";    
+    public const string MoviesDb = "MoviesDb";
+    public const string EinsteinVectorDb = "EinsteinVectorDb";
+    public const string UfoDb = "UfoDb";
 }
