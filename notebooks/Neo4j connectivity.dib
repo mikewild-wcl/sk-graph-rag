@@ -26,6 +26,8 @@ using System.IO;
 
 #!csharp
 
+const string DB_NAME = "neo4j"; // Default database name in Neo4j
+
 //Get configuration
 var config = new ConfigurationBuilder()
     .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"))
@@ -54,11 +56,12 @@ try
     var result = await driver.ExecutableQuery(@"
         MATCH (people:Person) RETURN people.name as name LIMIT 10
         ")
-        //.WithConfig(new QueryConfig(database: "movies"))
+        .WithConfig(new QueryConfig(database: DB_NAME))
         .ExecuteAsync();
 
     // Loop through results and print people's name
-    foreach (var record in result.Result) {
+    foreach (var record in result.Result)
+    {
         Console.WriteLine(record.Get<string>("name"));
     }
 }

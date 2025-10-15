@@ -10,9 +10,9 @@ A simple demo of vectors based on chapter 2 of Essential GraphRAG. The original 
 
 #!csharp
 
-#r "nuget:Microsoft.Extensions.Configuration, 9.0.9"
-#r "nuget:Microsoft.Extensions.Configuration.Json, 9.0.7"
-#r "nuget:Microsoft.SemanticKernel, 1.65.0"
+#r "nuget:Microsoft.Extensions.Configuration, 9.0.10"
+#r "nuget:Microsoft.Extensions.Configuration.Json, 9.0.10"
+#r "nuget:Microsoft.SemanticKernel, 1.66.0"
 #r "nuget:Neo4j.Driver, 5.28.3"
 #r "nuget:PdfPig, 0.1.11"
 #r "nuget:System.Net.Http, 4.3.4"
@@ -27,6 +27,9 @@ using System.Net.Http;
 using System.IO;
 
 #!csharp
+
+const string DB_NAME = "neo4j"; // Default database name in Neo4j
+var _clearGraphDB = false; // Set to true to clear the graph database before loading data
 
 //Get configuration
 var config = new ConfigurationBuilder()
@@ -43,7 +46,6 @@ Console.WriteLine($"Neo4j details: Connection: {connectionUri}, auth user: {user
 #!csharp
 
 // Create driver
-
 var driver = GraphDatabase.Driver(connectionUri, AuthTokens.Basic(user, password));
 await driver.VerifyConnectivityAsync();
 Console.WriteLine("Connection established.");
@@ -51,20 +53,10 @@ Console.WriteLine("Connection established.");
 #!csharp
 
 // Read the input file from the web and save it in a local folder
-
-var httpClient = new HttpClient();
-
 var downloadDir = "downloads";
 var fileName = "Einstein’s Patents and Inventions.pdf";
 var filePath = Path.Combine(downloadDir, fileName);
 var fileUri = new Uri("https://arxiv.org/pdf/1709.00666.pdf");
-
-// var response = requests.get(remote_pdf_url)
-
-if (!Directory.Exists(downloadDir))
-{
-    Directory.CreateDirectory(downloadDir);
-}
 
 if(File.Exists(filePath))
 {
@@ -72,6 +64,13 @@ if(File.Exists(filePath))
 }
 else
 {
+    if (!Directory.Exists(downloadDir))
+    {
+        Directory.CreateDirectory(downloadDir);
+    }
+
+    var httpClient = new HttpClient();
+
     using(var response = await httpClient.GetAsync(fileUri, HttpCompletionOption.ResponseHeadersRead))
     {
         if(response.IsSuccessStatusCode)
@@ -84,7 +83,8 @@ else
                 Console.WriteLine($"Downloaded the PDF to {filePath}");
             }
         }
-        else {
+        else
+        {
             Console.WriteLine("Failed to download the PDF. Status code:", response.StatusCode); 
         }
     }
@@ -232,8 +232,8 @@ for(var i = 0; i < chunks.Count && i < 5; i++)
 #!csharp
 
 // Set up Semantic Kernel with Azure OpenAI
-
 using Azure.AI.OpenAI;
+using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
@@ -263,15 +263,13 @@ var kernel = Kernel.CreateBuilder()
 
 #!csharp
 
-using Microsoft.Extensions.AI;
-//using Microsoft.Extensions.VectorData;
-
 var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+var embeddings = new List<ReadOnlyMemory<float>>();
 
 foreach(var chunk in chunks)
 {
     var embedding = await embeddingGenerator.GenerateVectorAsync(chunk);
-
+    embeddings.Add(embedding);
     Console.WriteLine($"Chunk length {chunk.Length} has embedding with {embedding.Length} dimensions.");
     Console.WriteLine($"    {chunk}");
     Console.WriteLine($"    {embedding.ToArray()[0]}, {embedding.ToArray()[1]}, {embedding.ToArray()[2]}, ..., {embedding.ToArray() [embedding.Length - 1]}");
@@ -288,6 +286,7 @@ try
         FOR (c:Chunk)
         ON c.embedding
         """)
+        .WithConfig(new QueryConfig(database: DB_NAME))
         .ExecuteAsync();
 
     Console.WriteLine("Created vector index.");
@@ -299,28 +298,8 @@ catch (Exception ex)
 
 #!csharp
 
-// Create full-text index in Neo4j
-try
-{
-    var result = await driver.ExecutableQuery(
-        """
-        CREATE FULLTEXT INDEX ftPdfChunk IF NOT EXISTS
-        FOR (c:Chunk) 
-        ON EACH [c.text]
-        """)
-        .ExecuteAsync();
-
-    Console.WriteLine("Created full-text index.");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Error while creating full-text index: {ex.Message}");
-}
-
-#!csharp
-
+// Add chunks and embeddings to neo4j
 /*
-# Add to neo4j
 cypher_query = '''
 WITH $chunks as chunks, range(0, size($chunks)) AS index
 UNWIND index AS i
@@ -343,6 +322,12 @@ try
         MERGE (c:Chunk {index: i})
         SET c.text = chunk, c.embedding = embedding
         """)
+        .WithParameters(new Dictionary<string, object>
+        {
+            { "chunks", chunks },
+            { "embeddings", embeddings.Select(e => e.ToArray()).ToList() }
+        })
+        .WithConfig(new QueryConfig(database: DB_NAME))
         .ExecuteAsync();
 
     Console.WriteLine("Added chunks and embeddings.");
@@ -357,18 +342,46 @@ catch (Exception ex)
 // Query all chunks
 /*
 records, _, _ = driver.execute_query("MATCH (c:Chunk) WHERE c.index = 0 RETURN c.embedding, c.text")
-
 print(records[0]["c.text"][0:30])
 print(records[0]["c.embedding"][0:3])
 */
 
+List<decimal> reList = null;
+try
+{
+    var result = await driver.ExecutableQuery(
+        """
+        MATCH (c:Chunk) WHERE c.index = 0 
+        RETURN c.embedding, c.text
+        """)
+        .WithConfig(new QueryConfig(database: DB_NAME))
+        .ExecuteAsync();
+
+    var r0 = result.Result[0]["c.text"]?.ToString()[0..30];
+    Console.WriteLine(r0);
+    Console.WriteLine(result.Result[0].Get<string>("c.text")?[0..30]);
+
+    var re = result.Result[0].Get<List<decimal>>("c.embedding");
+    reList = re?.GetRange(0, Math.Min(3, re.Count)) ?? new List<decimal>();
+
+    foreach (var d in re[0..3])
+    {
+        Console.Write($"[{d}],");
+    }
+    Console.WriteLine();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
+
 #!csharp
 
 // Simple question
-/*
-question = "At what time was Einstein really interested in experimental works?"
-question_embedding = embed([question])[0]
+var question = "At what time was Einstein really interested in experimental works?";
+var questionEmbedding = await embeddingGenerator.GenerateVectorAsync(question);
 
+/*
 query = '''
 CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) YIELD node AS hits, score
 RETURN hits.text AS text, score, hits.index AS index
@@ -378,9 +391,43 @@ similar_records, _, _ = driver.execute_query(query, question_embedding=question_
 for record in similar_records:
     print(record["text"])
     print(record["score"], record["index"])
-    print("======")*/
+    print("======")
+*/
+
+var similarRecordsTexts = new List<string>();
+
+try
+{
+    var similarRecords = await driver.ExecutableQuery(
+        """
+        CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) 
+        YIELD node AS hits, score
+        RETURN hits.text AS text, score, hits.index AS index
+        """)
+        .WithParameters(new Dictionary<string, object>
+        {
+            { "k", 4 }, // k as in in KNN - number of nearest neighbors
+            { "question_embedding", questionEmbedding.ToArray() }
+        })
+        .WithConfig(new QueryConfig(database: DB_NAME))
+        .ExecuteAsync();
+
+    foreach (var record in similarRecords.Result)
+    {
+        var text = record.Get<string>("text");
+        Console.WriteLine($"Found '{text}'");
+    }
+
+    similarRecordsTexts.AddRange(similarRecords.Result.Select(r => r.Get<string>("text")));
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
 
 #!csharp
+
+using Microsoft.Extensions.DependencyInjection;
 
 // Ask the LLM a question based on the context
 /*
@@ -406,8 +453,54 @@ stream = open_ai_client.chat.completions.create(
 )
 for chunk in stream:
     print(chunk.choices[0].delta.content or "", end="")
-
 */
+
+var systemMessage = "You're en Einstein expert, but can only use the provided documents to respond to the questions.";
+var userMessage = $"""
+Use the following documents to answer the question that will follow:
+{string.Join("\n\n---\n\n", similarRecordsTexts)} 
+---
+The question to answer using information only from the above documents: {question}
+""";
+//{string.Join("\n\n---\n\n", similarRecordsTexts.Select(doc => doc.Get<string>("text")) )} 
+
+// Console.WriteLine($"System Message: {systemMessage}");
+// Console.WriteLine($"User Message: {userMessage}");
+
+var chatCompletionService = kernel.Services.GetService<IChatCompletionService>();
+var responseIterator = chatCompletionService!.GetStreamingChatMessageContentsAsync(
+    new ChatHistory(
+        [
+            new ChatMessageContent(AuthorRole.System, systemMessage),
+            new ChatMessageContent(AuthorRole.User, userMessage),
+        ]));
+
+Console.Write("Response: ");
+await foreach (var token in responseIterator)
+{
+    Console.Write(token.Content);
+}
+
+#!csharp
+
+// Create full-text index in Neo4j
+try
+{
+    var result = await driver.ExecutableQuery(
+        """
+        CREATE FULLTEXT INDEX ftPdfChunk IF NOT EXISTS
+        FOR (c:Chunk) 
+        ON EACH [c.text]
+        """)
+        .WithConfig(new QueryConfig(database: DB_NAME))
+        .ExecuteAsync();
+
+    Console.WriteLine("Created full-text index.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error while creating full-text index: {ex.Message}");
+}
 
 #!csharp
 
@@ -441,6 +534,64 @@ for record in similar_hybrid_records:
     print(record["score"], record["node"]["index"])
     print("======")
 */
+var similarHybridRecordsTexts = new List<string>();
+
+try
+{
+    var similarHybridRecords = await driver.ExecutableQuery(
+        """
+        CALL {
+            // vector index
+            CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) YIELD node, score
+            WITH collect({node:node, score:score}) AS nodes, max(score) AS max
+            UNWIND nodes AS n
+            // We use 0 as min
+            RETURN n.node AS node, (n.score / max) AS score
+            UNION
+            // keyword index
+            CALL db.index.fulltext.queryNodes('ftPdfChunk', $question, {limit: $k})
+            YIELD node, score
+            WITH collect({node:node, score:score}) AS nodes, max(score) AS max
+            UNWIND nodes AS n
+            // We use 0 as min
+            RETURN n.node AS node, (n.score / max) AS score
+        }
+        // dedup
+        WITH node, max(score) AS score ORDER BY score DESC LIMIT $k
+        RETURN node, score
+        """)
+        .WithParameters(new Dictionary<string, object>
+        {
+            { "k", 4 }, // k as in in KNN - number of nearest neighbors
+            { "question_embedding", questionEmbedding.ToArray() },
+            { "question", question }
+        })
+        .WithConfig(new QueryConfig(database: DB_NAME))
+        .ExecuteAsync();
+
+    foreach (var record in similarHybridRecords.Result)
+    {
+        // print(record["node"]["text"])
+        // print(record["score"], record["node"]["index"])
+        //var text = record.Get<string>("text");
+        //var text = record["node"]..Get<string>("text");
+        //var r0 = record.Get<string>("text")[0..30];
+
+        //var text = record.Get<string>("node.text");
+        //var textNode = record["node"] as INode;
+        //var text = textNode.Get<string>("text");
+        var text = record["node"].As<INode>().Get<string>("text");
+
+        var score = record.Get<decimal>("score");
+        Console.WriteLine($"Found {score} - '{text}'");
+    }
+
+    similarHybridRecordsTexts.AddRange(similarHybridRecords.Result.Select(r => r["node"].As<INode>().Get<string>("text")));
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during query execution: {ex.Message}");
+}
 
 #!csharp
 
@@ -468,6 +619,26 @@ stream = open_ai_client.chat.completions.create(
 for chunk in stream:
     print(chunk.choices[0].delta.content or "", end="")
 */
+var userMessage = $"""
+Use the following documents to answer the question that will follow:
+{string.Join("\n\n---\n\n", similarHybridRecordsTexts)}
+---
+The question to answer using information only from the above documents: {question}
+""";
+
+var chatCompletionService = kernel.Services.GetService<IChatCompletionService>();
+var responseIterator = chatCompletionService!.GetStreamingChatMessageContentsAsync(
+    new ChatHistory(
+        [
+            new ChatMessageContent(AuthorRole.System, systemMessage),
+            new ChatMessageContent(AuthorRole.User, userMessage),
+        ]));
+
+Console.Write("Response: ");
+await foreach (var token in responseIterator)
+{
+    Console.Write(token.Content);
+}
 
 #!csharp
 
