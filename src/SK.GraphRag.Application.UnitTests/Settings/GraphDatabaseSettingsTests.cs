@@ -36,7 +36,6 @@ public class GraphDatabaseSettingsTests
         var connection = new Uri("bolt://localhost:7687");
         var user = "TEST_USER";
         var password = "PASSWORD";
-        var defaultDb = "neo4j";
         var provider = "memgraph";
         var einsteinVectorDb = "einstein";
         var moviesDb = "movies";

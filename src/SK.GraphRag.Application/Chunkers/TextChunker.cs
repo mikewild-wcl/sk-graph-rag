@@ -1,12 +1,13 @@
-﻿namespace SK.GraphRag.Application.Chunkers;
+﻿using System.Runtime.CompilerServices;
+
+namespace SK.GraphRag.Application.Chunkers;
 
 public static class TextChunker
 {
     public static string[] ChunkText(
-        string text, 
-        int chunkSize = 1000, 
-        int overlap = 200, 
-        bool splitOnWhitespaceOnly = true)
+        string text,
+        int chunkSize = 1000,
+        int overlap = 200)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(chunkSize, 0);
         ArgumentOutOfRangeException.ThrowIfLessThan(overlap, 0);
@@ -14,49 +15,79 @@ public static class TextChunker
 
         if (string.IsNullOrEmpty(text))
         {
-            return Array.Empty<string>();
+            return [];
         }
 
         var chunks = new List<string>();
-        for (int i = 0; i < text.Length; i += chunkSize - overlap)
+        var index = 0;
+
+        while (index < text.Length)
         {
-            int length = Math.Min(chunkSize, text.Length - i);
-            chunks.Add(text.Substring(i, length));
-            if (i + length >= text.Length) break;
+            var start = Math.Max(0, index - overlap);
+            var end = Math.Min(index + chunkSize + overlap, text.Length);
+            var chunk = text[start..end].Trim();
+            chunks.Add(chunk);
+            index += chunkSize;
         }
 
-        /*
-def chunk_text(text, chunk_size, overlap, split_on_whitespace_only=True):
-    chunks = []
-    index = 0
-
-    while index < len(text):
-        if split_on_whitespace_only:
-            prev_whitespace = 0
-            left_index = index - overlap
-            while left_index >= 0:
-                if text[left_index] == " ":
-                    prev_whitespace = left_index
-                    break
-                left_index -= 1
-            next_whitespace = text.find(" ", index + chunk_size)
-            if next_whitespace == -1:
-                next_whitespace = len(text)
-            chunk = text[prev_whitespace:next_whitespace].strip()
-            chunks.append(chunk)
-            index = next_whitespace + 1
-        else:
-            start = max(0, index - overlap + 1)
-            end = min(index + chunk_size + overlap, len(text))
-            chunk = text[start:end].strip()
-            chunks.append(chunk)
-            index += chunk_size
-
-    return chunks         */
-
-        return chunks.ToArray();
-
-
+        return [.. chunks];
     }
 
+    public static string[] ChunkTextOnWhitespaceOnly(
+        string text,
+        int chunkSize = 1000,
+        int overlap = 200)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(chunkSize, 0);
+        ArgumentOutOfRangeException.ThrowIfLessThan(overlap, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(overlap, chunkSize);
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return [];
+        }
+
+        var chunks = new List<string>();
+        var index = 0;
+
+        while (index < text.Length)
+        {
+            var prevWhitespace = 0;
+            var leftIndex = index - overlap;
+            while (leftIndex >= 0)
+            {
+                if (char.IsWhiteSpace(text[leftIndex]))
+                {
+                    prevWhitespace = leftIndex;
+                    break;
+                }
+                leftIndex--;
+            }
+
+            var nextWhitespace = FindNextWhitespace(text, index + chunkSize);
+            if (nextWhitespace == -1)
+            {
+                nextWhitespace = text.Length;
+            }
+
+            var chunk = text[prevWhitespace..nextWhitespace].Trim();
+            chunks.Add(chunk);
+            index = nextWhitespace + 1;
+        }
+
+        return [.. chunks];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int FindNextWhitespace(string text, int startIndex)
+    {
+        for (int i = startIndex; i < text.Length; i++)
+        {
+            if (char.IsWhiteSpace(text[i]))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
 }
