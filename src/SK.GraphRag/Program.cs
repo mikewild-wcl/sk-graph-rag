@@ -10,8 +10,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services
+    .ConfigureOptions(builder.Configuration)
     .RegisterServices()
-    .RegisterGraphDatabase(builder.Configuration);
+    .RegisterGraphDatabase();
 
 // Persist state across navigations (per circuit/session)
 builder.Services.AddScoped<CounterState>();

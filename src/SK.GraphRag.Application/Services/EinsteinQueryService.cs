@@ -1,10 +1,21 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SK.GraphRag.Application.Services.Interfaces;
+using SK.GraphRag.Application.Settings;
 
 namespace SK.GraphRag.Application.Services;
 
-public sealed class EinsteinQueryService(ILogger<EinsteinQueryService> logger) : IEinsteinQueryService
+public sealed class EinsteinQueryService(
+    IDownloadService downloadService,
+    IOptions<EinsteinQuerySettings> queryOptions,
+    ILogger<EinsteinQueryService> logger,
+    HttpClient httpClient) : IEinsteinQueryService
 {
+    private readonly IDownloadService _downloadService = downloadService;
+    private readonly EinsteinQuerySettings _querySettings = queryOptions.Value;
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly ILogger<EinsteinQueryService> _logger = logger;
+
     private static readonly Dictionary<string, string> _facts = new(StringComparer.OrdinalIgnoreCase)
     {
         ["when was einstein born?"] = "Albert Einstein was born on March 14, 1879.",
@@ -20,6 +31,12 @@ public sealed class EinsteinQueryService(ILogger<EinsteinQueryService> logger) :
             new EventId(1, nameof(LoadData)),
             "LoadData called: {Message}");
 
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, string, Exception?> _logLoadDataComplete =
+    LoggerMessage.Define<string, string>(
+        LogLevel.Information,
+        new EventId(1, nameof(LoadData)),
+        "File load complete for uri {Uri} file {FileName}");
+
     public async Task<string> Ask(string question, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(question))
@@ -28,6 +45,11 @@ public sealed class EinsteinQueryService(ILogger<EinsteinQueryService> logger) :
         }
 
         var key = question.Trim();
+
+        //TODO: Create embedding from question
+        //TODO: Query Graph DB for relevant chunks
+        //TODO: Call MAF chat completion
+
         if (_facts.TryGetValue(key, out var answer))
         {
             return answer;
@@ -38,8 +60,13 @@ public sealed class EinsteinQueryService(ILogger<EinsteinQueryService> logger) :
 
     public async Task LoadData()
     {
-        _logLoadDataCalled(logger, "LoadData called", null);
+        _logLoadDataCalled(_logger, "LoadData called", null);
 
-        await Task.Delay(2000).ConfigureAwait(true);
+        await _downloadService.DownloadFileIfNotExists(_querySettings.DocumentUri, _querySettings.DocumentFileName).ConfigureAwait(false);
+
+        //TODO: Parse file, Chunk the file, create embeddings, and save to Graph DB
+        //      Need a PdfParserService/ChunkingService/EmbeddingService, GraphDataService
+        //      Consider making a EinsteinDataIngestionService to handle this workflow
+        _logLoadDataComplete(_logger, _querySettings.DocumentUri.ToString(), _querySettings.DocumentFileName, null);
     }
 }

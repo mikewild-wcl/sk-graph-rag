@@ -9,6 +9,13 @@ public static class ResourceNames
     public const string EmbeddingDeploymentName = "EmbeddingDeploymentName";
     public const string Timeout = "Timeout";
 
+    public const string DownloadSection = "Download";
+    public const string DownloadDirectory = "DownloadDirectory";
+    
+    public const string EinsteinQuerySection = "EinsteinQuery";
+    public const string DocumentFileName = "DocumentFileName";
+    public const string DocumentUri = "DocumentUri";
+
     public const string GraphDatabaseSection = "GraphDatabase";
     public const string CreateInDocker = "CreateInDocker";
     public const string Provider = "Provider";

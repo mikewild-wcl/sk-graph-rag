@@ -18,6 +18,10 @@ var azureOpenAIDeploymentName = builder.AddParameter($"{ResourceNames.AzureOpenA
 var azureOpenAIEmbeddingDeploymentName = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.EmbeddingDeploymentName}");
 var azureOpenAITimeout = builder.AddParameter($"{ResourceNames.AzureOpenAISection}-{ResourceNames.Timeout}");
 
+var downloadDirectory = builder.AddParameter($"{ResourceNames.DownloadSection}-{ResourceNames.DownloadDirectory}");
+var einsteinDocumentFileName = builder.AddParameter($"{ResourceNames.EinsteinQuerySection}-{ResourceNames.DocumentFileName}");
+var einsteinDocumentUri = builder.AddParameter($"{ResourceNames.EinsteinQuerySection}-{ResourceNames.DocumentUri}");
+
 var addDockerContainers =
     bool.TryParse(createGraphDBInDocker.GetValue(), out var createInDocker)
     && createInDocker;
@@ -47,6 +51,10 @@ builder.AddProject<Projects.SK_GraphRag>(ProjectNames.GraphRagBlazorApp)
     .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.ApiKey}", azureOpenAIApiKey)
     .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.DeploymentName}", azureOpenAIDeploymentName)
     .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.EmbeddingDeploymentName}", azureOpenAIEmbeddingDeploymentName)
-    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.Timeout}", azureOpenAITimeout);
+    .WithEnvironment($"{ResourceNames.AzureOpenAISection}:{ResourceNames.Timeout}", azureOpenAITimeout)
+    .WithEnvironment($"{ResourceNames.DownloadSection}:{ResourceNames.DownloadDirectory}", downloadDirectory)
+    .WithEnvironment($"{ResourceNames.EinsteinQuerySection}:{ResourceNames.DocumentFileName}", einsteinDocumentFileName)
+    .WithEnvironment($"{ResourceNames.EinsteinQuerySection}:{ResourceNames.DocumentUri}", einsteinDocumentUri)
+    ;
 
 await builder.Build().RunAsync().ConfigureAwait(false);

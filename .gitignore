@@ -427,3 +427,6 @@ BenchmarkDotNet.Artifacts/
 # Private data files
 private/
 .private/
+
+# Working folder for downloaded files
+downloads/
