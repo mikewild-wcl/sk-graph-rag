@@ -2,20 +2,14 @@
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
 using SK.GraphRag.Application.Data.Interfaces;
-using SK.GraphRag.Application.Services;
 using SK.GraphRag.Application.Settings;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SK.GraphRag.Application.Data;
 
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-public class Neo4jDataAccess : INeo4jDataAccess
+public abstract class Neo4jDataAccess : INeo4jDataAccess
 {
-    private readonly string _database;
+    private readonly string _databaseName;
 
     private readonly IAsyncSession _session;
 
@@ -26,17 +20,18 @@ public class Neo4jDataAccess : INeo4jDataAccess
         new EventId(1, nameof(Neo4jDataAccess)),
         "There was a problem while executing database {AccessType} query");
 
-    public Neo4jDataAccess(
+    protected Neo4jDataAccess(
         IDriver driver,
         IOptions<GraphDatabaseSettings> options,
+        string databaseName,
         ILogger<Neo4jDataAccess> logger)
     {
         ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(options);
 
-        // TODO: Pass db into methods from callers or inject/make generic/generic base
-        _database = options.Value.MoviesDb ?? "neo4j";
-        _session = driver.AsyncSession(o => o.WithDatabase(_database));
+        _databaseName = databaseName; // GraphDatabaseSettings.DefaultDb; // Default should be overwritten by derived classes
+
+        _session = driver.AsyncSession(o => o.WithDatabase(_databaseName));
         _logger = logger;
     }
 

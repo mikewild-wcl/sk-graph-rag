@@ -1,4 +1,4 @@
-namespace SK.GraphRag.Application.Services.Interfaces;
+namespace SK.GraphRag.Application.EinsteinQuery.Interfaces;
 
 public interface IEinsteinQueryService
 {

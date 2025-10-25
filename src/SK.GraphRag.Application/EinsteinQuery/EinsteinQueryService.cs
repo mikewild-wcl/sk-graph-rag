@@ -1,19 +1,18 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SK.GraphRag.Application.EinsteinQuery.Interfaces;
 using SK.GraphRag.Application.Services.Interfaces;
 using SK.GraphRag.Application.Settings;
 
-namespace SK.GraphRag.Application.Services;
+namespace SK.GraphRag.Application.EinsteinQuery;
 
 public sealed class EinsteinQueryService(
     IDownloadService downloadService,
     IOptions<EinsteinQuerySettings> queryOptions,
-    ILogger<EinsteinQueryService> logger,
-    HttpClient httpClient) : IEinsteinQueryService
+    ILogger<EinsteinQueryService> logger) : IEinsteinQueryService
 {
     private readonly IDownloadService _downloadService = downloadService;
     private readonly EinsteinQuerySettings _querySettings = queryOptions.Value;
-    private readonly HttpClient _httpClient = httpClient;
     private readonly ILogger<EinsteinQueryService> _logger = logger;
 
     private static readonly Dictionary<string, string> _facts = new(StringComparer.OrdinalIgnoreCase)
@@ -25,13 +24,13 @@ public sealed class EinsteinQueryService(
         ["when did einstein die?"] = "He died on April 18, 1955 in Princeton, New Jersey, USA.",
     };
 
-    private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, Exception?> _logLoadDataCalled =
+    private static readonly Action<ILogger, string, Exception?> _logLoadDataCalled =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(1, nameof(LoadData)),
             "LoadData called: {Message}");
 
-    private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, string, Exception?> _logLoadDataComplete =
+    private static readonly Action<ILogger, string, string, Exception?> _logLoadDataComplete =
     LoggerMessage.Define<string, string>(
         LogLevel.Information,
         new EventId(1, nameof(LoadData)),

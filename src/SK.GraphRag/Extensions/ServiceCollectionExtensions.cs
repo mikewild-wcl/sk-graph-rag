@@ -1,5 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
 using Neo4j.Driver;
+using SK.GraphRag.Application.EinsteinQuery;
+using SK.GraphRag.Application.EinsteinQuery.Interfaces;
+using SK.GraphRag.Application.Movies;
+using SK.GraphRag.Application.Movies.Interfaces;
 using SK.GraphRag.Application.Services;
 using SK.GraphRag.Application.Services.Interfaces;
 using SK.GraphRag.Application.Settings;
@@ -19,9 +23,10 @@ internal static class ServiceCollectionExtensions
 
     internal static IServiceCollection RegisterServices(this IServiceCollection services)
     {
-        services.AddSingleton<IGraphDataService, GraphDataService>();
-        services.AddScoped<IMoviesGraphQueryService, MoviesGraphQueryService>();
-        services.AddScoped<IEinsteinQueryService, EinsteinQueryService>();
+        services            
+            .AddScoped<IMoviesDataAccess, MoviesDataAccess>()
+            .AddScoped<IMoviesGraphQueryService, MoviesGraphQueryService>()
+            .AddScoped<IEinsteinQueryService, EinsteinQueryService>();
 
         services.AddHttpClient<IDownloadService, DownloadService>(client =>
         {

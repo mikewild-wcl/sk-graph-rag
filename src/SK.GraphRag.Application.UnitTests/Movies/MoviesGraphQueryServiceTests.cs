@@ -1,16 +1,16 @@
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Services;
+using SK.GraphRag.Application.Movies;
+using SK.GraphRag.Application.Movies.Interfaces;
 using System.Reflection;
 
-namespace SK.GraphRag.Application.UnitTests.Services;
+namespace SK.GraphRag.Application.UnitTests.Movies;
 
 public class MoviesGraphQueryServiceTests
 {
     private readonly Mock<IDriver> _mockDriver;
-
+    private readonly Mock<IMoviesDataAccess> _mockDataAccess;
     private readonly Mock<IExecutableQuery<IRecord, IRecord>> _mockExecutableQuery;
-
     private readonly Mock<ILogger<MoviesGraphQueryService>> _mockLogger;
 
     private readonly MoviesGraphQueryService _sut;
@@ -21,13 +21,16 @@ public class MoviesGraphQueryServiceTests
         _mockExecutableQuery.Setup(q => q.WithParameters(It.IsAny<object>())).Returns(_mockExecutableQuery.Object);
         _mockExecutableQuery.Setup(q => q.WithConfig(It.IsAny<QueryConfig>())).Returns(_mockExecutableQuery.Object);
 
-        _mockDriver = new Mock<IDriver>();
+        _mockDataAccess = new Mock<IMoviesDataAccess>();
 
+        _mockDriver = new Mock<IDriver>();
         _mockDriver.Setup(d => d.ExecutableQuery(It.IsAny<string>())).Returns(_mockExecutableQuery.Object);
 
         _mockLogger = new Mock<ILogger<MoviesGraphQueryService>>();
+
         _sut = new MoviesGraphQueryService(
             _mockDriver.Object,
+            _mockDataAccess.Object,
             _mockLogger.Object);
     }
 
@@ -48,6 +51,9 @@ public class MoviesGraphQueryServiceTests
         _mockExecutableQuery.Setup(q => q.ExecuteAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ConstructEagerResult(mockRecords));
 
+        _mockDataAccess.Setup(x => x.ExecuteReadListAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, object>?>()))
+            .ReturnsAsync(expectedTitles);        
+
         // Act
         var result = await _sut.GetMoviesForActor(actorName, TestContext.Current.CancellationToken);
 
@@ -60,10 +66,12 @@ public class MoviesGraphQueryServiceTests
     {
         // Arrange
         var actorName = "Unkown";
-        var mockRecords = Enumerable.Empty<IRecord>().ToList();
 
         _mockExecutableQuery.Setup(q => q.ExecuteAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ConstructEagerResult(mockRecords));
+            .ReturnsAsync(ConstructEagerResult(Enumerable.Empty<IRecord>().ToList()));
+
+        _mockDataAccess.Setup(x => x.ExecuteReadListAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, object>?>()))
+            .ReturnsAsync([]);
 
         // Act
         var result = await _sut.GetMoviesForActor(actorName, TestContext.Current.CancellationToken);

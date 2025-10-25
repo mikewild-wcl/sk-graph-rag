@@ -61,7 +61,7 @@ public sealed class DownloadService(
         _downloadedLog(_logger, filePath, null);
     }
 
-    private void CreateDirectoryIfNotExists(string directoryPath)
+    private static void CreateDirectoryIfNotExists(string directoryPath)
     {
         if (!Directory.Exists(directoryPath))
         {

@@ -1,6 +1,8 @@
 @page "/einstein"
+@using SK.GraphRag.Application.EinsteinQuery
+@using SK.GraphRag.Application.EinsteinQuery.Interfaces
 @rendermode InteractiveServer
-@inject SK.GraphRag.Application.Services.Interfaces.IEinsteinQueryService EinsteinService
+@inject IEinsteinQueryService EinsteinService
 @inject EinsteinState State
 
 <PageTitle>Einstein Chat</PageTitle>
