@@ -28,6 +28,7 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
     {
         ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(databaseName);
 
         _databaseName = databaseName; // GraphDatabaseSettings.DefaultDb; // Default should be overwritten by derived classes
 
@@ -103,20 +104,18 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
         {
             parameters = parameters == null ? new Dictionary<string, object>() : parameters;
 
-            var result = await _session.ReadTransactionAsync(async tx =>
+            var result = await _session.ExecuteReadAsync(async tx =>
             {
-                var data = new List<T>();
-
                 var res = await tx.RunAsync(query, parameters);
 
                 var records = await res.ToListAsync();
 
-                data = records.Select(x => (T)x.Values[returnObjectKey]).ToList();
+                var data = records.Select(x => (T)x.Values[returnObjectKey])?.ToList();
 
                 return data;
             });
 
-            return result;
+            return result ?? Enumerable.Empty<T>().ToList();
         }
         catch (Exception ex)
         {
@@ -127,8 +126,11 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
 
     public async ValueTask DisposeAsync()
     {
-        await _session.CloseAsync();
-        await _session.DisposeAsync();
+        if (_session is not null)
+        {
+            await _session.CloseAsync();
+            await _session.DisposeAsync();
+        }
 
         GC.SuppressFinalize(this);
     }

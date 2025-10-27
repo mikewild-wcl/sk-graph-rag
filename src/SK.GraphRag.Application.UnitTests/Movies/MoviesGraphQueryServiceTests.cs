@@ -1,35 +1,32 @@
 using Microsoft.Extensions.Logging;
-using Neo4j.Driver;
 using SK.GraphRag.Application.Movies;
 using SK.GraphRag.Application.Movies.Interfaces;
-using System.Reflection;
 
 namespace SK.GraphRag.Application.UnitTests.Movies;
 
 public class MoviesGraphQueryServiceTests
 {
-    private readonly Mock<IDriver> _mockDriver;
+    //private readonly Mock<IDriver> _mockDriver;
     private readonly Mock<IMoviesDataAccess> _mockDataAccess;
-    private readonly Mock<IExecutableQuery<IRecord, IRecord>> _mockExecutableQuery;
+    //private readonly Mock<IExecutableQuery<IRecord, IRecord>> _mockExecutableQuery;
     private readonly Mock<ILogger<MoviesGraphQueryService>> _mockLogger;
 
     private readonly MoviesGraphQueryService _sut;
 
     public MoviesGraphQueryServiceTests()
     {
-        _mockExecutableQuery = new Mock<IExecutableQuery<IRecord, IRecord>>();
-        _mockExecutableQuery.Setup(q => q.WithParameters(It.IsAny<object>())).Returns(_mockExecutableQuery.Object);
-        _mockExecutableQuery.Setup(q => q.WithConfig(It.IsAny<QueryConfig>())).Returns(_mockExecutableQuery.Object);
+        //_mockExecutableQuery = new Mock<IExecutableQuery<IRecord, IRecord>>();
+        //_mockExecutableQuery.Setup(q => q.WithParameters(It.IsAny<object>())).Returns(_mockExecutableQuery.Object);
+        //_mockExecutableQuery.Setup(q => q.WithConfig(It.IsAny<QueryConfig>())).Returns(_mockExecutableQuery.Object);
 
         _mockDataAccess = new Mock<IMoviesDataAccess>();
 
-        _mockDriver = new Mock<IDriver>();
-        _mockDriver.Setup(d => d.ExecutableQuery(It.IsAny<string>())).Returns(_mockExecutableQuery.Object);
+        //_mockDriver = new Mock<IDriver>();
+        //_mockDriver.Setup(d => d.ExecutableQuery(It.IsAny<string>())).Returns(_mockExecutableQuery.Object);
 
         _mockLogger = new Mock<ILogger<MoviesGraphQueryService>>();
 
         _sut = new MoviesGraphQueryService(
-            _mockDriver.Object,
             _mockDataAccess.Object,
             _mockLogger.Object);
     }
@@ -41,15 +38,15 @@ public class MoviesGraphQueryServiceTests
         var actorName = "Tom Hanks";
         var expectedTitles = new List<string> { "Forrest Gump", "Cast Away" };
 
-        var mockRecords = expectedTitles.Select(title =>
-        {
-            var mockRecord = new Mock<IRecord>();
-            mockRecord.Setup(r => r.Get<string>("movieTitle")).Returns(title);
-            return mockRecord.Object;
-        }).ToList();
+        //var mockRecords = expectedTitles.Select(title =>
+        //{
+        //    var mockRecord = new Mock<IRecord>();
+        //    mockRecord.Setup(r => r.Get<string>("movieTitle")).Returns(title);
+        //    return mockRecord.Object;
+        //}).ToList();
 
-        _mockExecutableQuery.Setup(q => q.ExecuteAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ConstructEagerResult(mockRecords));
+        //_mockExecutableQuery.Setup(q => q.ExecuteAsync(It.IsAny<CancellationToken>()))
+        //    .ReturnsAsync(ConstructEagerResult(mockRecords));
 
         _mockDataAccess.Setup(x => x.ExecuteReadListAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, object>?>()))
             .ReturnsAsync(expectedTitles);        
@@ -67,8 +64,8 @@ public class MoviesGraphQueryServiceTests
         // Arrange
         var actorName = "Unkown";
 
-        _mockExecutableQuery.Setup(q => q.ExecuteAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ConstructEagerResult(Enumerable.Empty<IRecord>().ToList()));
+        //_mockExecutableQuery.Setup(q => q.ExecuteAsync(It.IsAny<CancellationToken>()))
+        //    .ReturnsAsync(ConstructEagerResult(Enumerable.Empty<IRecord>().ToList()));
 
         _mockDataAccess.Setup(x => x.ExecuteReadListAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IDictionary<string, object>?>()))
             .ReturnsAsync([]);
@@ -79,22 +76,5 @@ public class MoviesGraphQueryServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-    }
-
-    private static EagerResult<IReadOnlyList<IRecord>> ConstructEagerResult(
-        IReadOnlyList<IRecord> records,
-        IResultSummary? summary = null,
-        string[]? keys = null)
-    {
-        var type = typeof(EagerResult<IReadOnlyList<IRecord>>);
-        var ctor = type.GetConstructor(
-            BindingFlags.Instance | BindingFlags.NonPublic,
-            binder: null,
-            [typeof(IReadOnlyList<IRecord>), typeof(IResultSummary), typeof(string[])],
-            modifiers: null
-        ) ?? throw new InvalidOperationException("EagerResult constructor not found.");
-
-        return (EagerResult<IReadOnlyList<IRecord>>)ctor.Invoke(
-            [records, summary, keys ?? []]);
     }
 }
