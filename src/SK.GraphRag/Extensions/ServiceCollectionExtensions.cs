@@ -25,7 +25,7 @@ internal static class ServiceCollectionExtensions
     {
         services            
             .AddScoped<IMoviesDataAccess, MoviesDataAccess>()
-            .AddScoped<IMoviesGraphQueryService, MoviesGraphQueryService>()
+            .AddScoped<IMoviesQueryService, MoviesQueryService>()
             .AddScoped<IEinsteinQueryService, EinsteinQueryService>();
 
         services.AddHttpClient<IDownloadService, DownloadService>(client =>

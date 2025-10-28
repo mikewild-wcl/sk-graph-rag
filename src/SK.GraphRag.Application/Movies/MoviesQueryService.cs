@@ -4,15 +4,15 @@ using SK.GraphRag.Application.Movies.Interfaces;
 
 namespace SK.GraphRag.Application.Movies;
 
-public sealed class MoviesGraphQueryService(
+public sealed class MoviesQueryService(
     IMoviesDataAccess dataAccess,
-    ILogger<MoviesGraphQueryService> logger) : IMoviesGraphQueryService
+    ILogger<MoviesQueryService> logger) : IMoviesQueryService
 {
     private readonly IMoviesDataAccess _dataAccess = dataAccess;
-    private readonly ILogger<MoviesGraphQueryService> _logger = logger;
+    private readonly ILogger<MoviesQueryService> _logger = logger;
 
     private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, Exception?> _logQueryError =
-        LoggerMessage.Define<string>(LogLevel.Error, new EventId(1, nameof(MoviesGraphQueryService)),
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(1, nameof(MoviesQueryService)),
             "Error querying movies for actor {ActorName}");
 
     public async Task<List<string>> GetMoviesForActor(string actorName, CancellationToken cancellationToken = default)

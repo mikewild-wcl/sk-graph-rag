@@ -1,6 +1,6 @@
 namespace SK.GraphRag.Application.Movies.Interfaces;
 
-public interface IMoviesGraphQueryService
+public interface IMoviesQueryService
 {
     Task<List<string>> GetMoviesForActor(string actorName, CancellationToken cancellationToken = default);
 }
