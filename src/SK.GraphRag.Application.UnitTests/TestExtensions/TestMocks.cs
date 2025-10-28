@@ -1,6 +1,6 @@
 ﻿namespace SK.GraphRag.Application.UnitTests.TestExtensions;
 
-internal static class TestHelpers
+internal static class TestMocks
 {
     public static async IAsyncEnumerable<T> MockAsyncEnumerable<T>(IEnumerable<T> items)
     {

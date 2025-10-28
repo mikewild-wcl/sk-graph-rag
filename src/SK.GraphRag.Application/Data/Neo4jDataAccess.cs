@@ -28,7 +28,7 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
     {
         ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(options);
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(databaseName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
 
         _databaseName = databaseName; // GraphDatabaseSettings.DefaultDb; // Default should be overwritten by derived classes
 

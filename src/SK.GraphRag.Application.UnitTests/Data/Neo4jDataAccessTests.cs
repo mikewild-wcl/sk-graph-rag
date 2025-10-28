@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
 using SK.GraphRag.Application.Data;
@@ -9,6 +10,10 @@ namespace SK.GraphRag.Application.UnitTests.Data;
 
 public class Neo4jDataAccessTests
 {
+    private const string DATABASE_NAME_FIELD = "_databaseName";
+    private const string TEST_DATABASE_NAME = "testdb";
+
+    /* Test class required because Neo4jDataAccess is abstract */
     private sealed class TestNeo4jDataAccess(
         IDriver driver,
         IOptions<GraphDatabaseSettings> options,
@@ -24,71 +29,80 @@ public class Neo4jDataAccessTests
     }
 
     [Fact]
-    public async Task ExecuteReadTransactionAsync_CallbackInvokes_RunAsync_AndReturnsMappedValues()
+    public async Task Constructor_SetsDatabaseName()
+    {
+        // Arrange
+        IOptions<GraphDatabaseSettings> options = new OptionsWrapper<GraphDatabaseSettings>(new GraphDatabaseSettings());
+
+        var sut = new TestNeo4jDataAccess(Mock.Of<IDriver>(),
+            options,
+            TEST_DATABASE_NAME,
+            NullLogger<Neo4jDataAccess>.Instance);
+
+        await using (sut.ConfigureAwait(false))
+        {
+            // Assert
+            var databaseValue = sut.GetPrivateField(DATABASE_NAME_FIELD);
+            databaseValue.Should().Be(TEST_DATABASE_NAME);
+        }
+    }
+
+    [Fact]
+    public void Constructor_WithEmptyDatabaseName_ThrowsException()
+    {
+        // Arrange
+        IOptions<GraphDatabaseSettings> options = new OptionsWrapper<GraphDatabaseSettings>(new GraphDatabaseSettings());
+
+        FluentActions.Invoking(() => new TestNeo4jDataAccess(Mock.Of<IDriver>(),
+            options,
+            string.Empty,
+            NullLogger<Neo4jDataAccess>.Instance))
+            .Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Constructor_WithNullDatabaseName_ThrowsException()
+    {
+        // Arrange
+        IOptions<GraphDatabaseSettings> options = new OptionsWrapper<GraphDatabaseSettings>(new GraphDatabaseSettings());
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+        FluentActions.Invoking(() => new TestNeo4jDataAccess(Mock.Of<IDriver>(),
+            options,
+            null,
+            NullLogger<Neo4jDataAccess>.Instance))
+            .Should().Throw<ArgumentNullException>();
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+    }
+
+    [Fact]
+    public async Task ExecuteReadListAsync_Invokes_RunAsync_AndReturnsMappedValues()
     {
         // Arrange
         var query = "MATCH (n) RETURN n.name AS name";
         var returnKey = "name";
         var expectedValue = "Alice";
 
-        // Mock a record that contains the expected value under returnKey
         var recordMock = new Mock<IRecord>();
         recordMock.Setup(r => r.Values).Returns(new Dictionary<string, object> { { returnKey, expectedValue } });
 
-        // Mock result cursor to return our record list
+        var mockAsyncEnumerableRecords = TestMocks.MockAsyncEnumerable([recordMock.Object]);
+
         var cursorMock = new Mock<IResultCursor>();
-        /*
-        cursorMock.Setup(c => c.ToListAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<IRecord> { recordMock.Object });
-        */
-        //Try another way since ToListAsync with params is not available
-        cursorMock
-           .SetupSequence(cursor => cursor.FetchAsync())
-           .ReturnsAsync(true)  // First record
-           .ReturnsAsync(false); // No more records
-
-        //TODO: Should be able to use the Values dictionary setup above
-        var mockMovie = new Mock<IRecord>();
-        mockMovie.Setup(r => r.Get<string>(returnKey))
-            .Returns(() => expectedValue);
-
-        // Do we still need this?
-        //cursorMock
-        //    .Setup(cursor => cursor.Current)
-        //    //.Returns(mockMovie.Object);
-        //    .Returns(() => mockMovie.Object);
-        //end alternative
-
-        //var mockStuff = TestHelpers.MockAsyncEnumerable(new List<IRecord> { mockMovie.Object });
-        var mockStuff = TestHelpers.MockAsyncEnumerable(new List<IRecord> { recordMock.Object  });
-        //cursorMock
-        //    .Setup(cursor => cursor.Current)
-        //    //.Returns(mockMovie.Object);
-        //    .Returns(() => recordMock.Object);
         cursorMock
             .Setup(cursor => cursor.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-            .Returns(() => mockStuff.GetAsyncEnumerator());
-        /*
-        cursorMock
-            .Setup(cursor => cursor.GetAsyncEnumerator)
-            .Returns(() => new AsyncEnumeratorMock<IRecord>(new List<IRecord> { mockMovie.Object }));
-        */
+            .Returns(() => mockAsyncEnumerableRecords.GetAsyncEnumerator());
 
-        // Mock transaction and ensure RunAsync is called with expected query
         var txMock = new Mock<IAsyncTransaction>();
         txMock
             .Setup(t => t.RunAsync(It.Is<string>(q => q == query), It.IsAny<IDictionary<string, object>?>()))
-            //.Setup(t => t.RunAsync(It.IsAny<string>(), It.IsAny<IDictionary<string, object>?>()))
-            //.ReturnsAsync(cursorMock.Object);
             .ReturnsAsync(() => cursorMock.Object);
 
-        // Mock session to capture and invoke the callback with our mocked transaction
         var sessionMock = new Mock<IAsyncSession>();
         sessionMock
             .Setup(s => s.ExecuteReadAsync(It.IsAny<Func<IAsyncQueryRunner, Task<List<string>>>>(), It.IsAny<Action<TransactionConfigBuilder>>()))
             .Returns<Func<IAsyncTransaction, Task<List<string>>>, Action<TransactionConfigBuilder>>((callback, _) => callback(txMock.Object));
 
-        // Mock driver to return our mocked session
         var driverMock = new Mock<IDriver>();
         driverMock
             .Setup(d => d.AsyncSession(It.IsAny<Action<SessionConfigBuilder>>()))
@@ -97,20 +111,72 @@ public class Neo4jDataAccessTests
         var options = Options.Create(new GraphDatabaseSettings());
         var loggerMock = new Mock<ILogger<Neo4jDataAccess>>();
 
-        var dataAccess = new TestNeo4jDataAccess(driverMock.Object, options, "testdb", loggerMock.Object);
+        var sut = new TestNeo4jDataAccess(driverMock.Object, options, TEST_DATABASE_NAME, loggerMock.Object);
 
-        try
+        // Act
+        await using (sut.ConfigureAwait(false))
         {
-            // Act
-            var result = await dataAccess.ExecuteReadListAsync(query, returnKey);
+            var result = await sut.ExecuteReadListAsync(query, returnKey);
 
             // Assert
             result.Should().ContainSingle().Which.Should().Be(expectedValue);
             txMock.Verify(t => t.RunAsync(query, It.IsAny<IDictionary<string, object>?>()), Times.Once);
+            txMock.Verify(t => t.RunAsync(query, It.Is<IDictionary<string, object>?>(dic => dic != null && dic.Count == 0)), Times.Once);
         }
-        finally
+    }
+
+    [Fact]
+    public async Task ExecuteReadListAsync_WithParameters_Invokes_RunAsync_AndReturnsMappedValues()
+    {
+        // Arrange
+        var query = "MATCH (p:Person {alias: $name}) RETURN p.name AS name";
+        var parameter = "name";
+        var parameterValue = "Bob";
+        var returnKey = "name";
+        var expectedValue = "Alice";
+
+        var parameters = new Dictionary<string, object> { { parameter, parameterValue } };
+
+        var recordMock = new Mock<IRecord>();
+        recordMock.Setup(r => r.Values).Returns(new Dictionary<string, object> { { returnKey, expectedValue } });
+
+        var mockAsyncEnumerableRecords = TestMocks.MockAsyncEnumerable([recordMock.Object]);
+
+        var cursorMock = new Mock<IResultCursor>();
+        cursorMock
+            .Setup(cursor => cursor.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
+            .Returns(() => mockAsyncEnumerableRecords.GetAsyncEnumerator());
+
+        var txMock = new Mock<IAsyncTransaction>();
+        txMock
+            .Setup(t => t.RunAsync(It.Is<string>(q => q == query), It.IsAny<IDictionary<string, object>?>()))
+            .ReturnsAsync(() => cursorMock.Object);
+
+        var sessionMock = new Mock<IAsyncSession>();
+        sessionMock
+            .Setup(s => s.ExecuteReadAsync(It.IsAny<Func<IAsyncQueryRunner, Task<List<string>>>>(), It.IsAny<Action<TransactionConfigBuilder>>()))
+            .Returns<Func<IAsyncTransaction, Task<List<string>>>, Action<TransactionConfigBuilder>>((callback, _) => callback(txMock.Object));
+
+        var driverMock = new Mock<IDriver>();
+        driverMock
+            .Setup(d => d.AsyncSession(It.IsAny<Action<SessionConfigBuilder>>()))
+            .Returns(sessionMock.Object);
+
+        var options = Options.Create(new GraphDatabaseSettings());
+        var loggerMock = new Mock<ILogger<Neo4jDataAccess>>();
+
+        var sut = new TestNeo4jDataAccess(driverMock.Object, options, TEST_DATABASE_NAME, loggerMock.Object);
+
+        // Act
+        await using (sut.ConfigureAwait(false))
         {
-            await dataAccess.DisposeAsync().ConfigureAwait(true);
+            var result = await sut.ExecuteReadListAsync(query, returnKey, parameters);
+
+            // Assert
+            result.Should().ContainSingle().Which.Should().Be(expectedValue);
+            txMock.Verify(t => t.RunAsync(query, It.IsAny<IDictionary<string, object>?>()), Times.Once);
+            txMock.Verify(t => t.RunAsync(query, It.Is<IDictionary<string, object>?>(dic => dic != null && dic.Count == 1)), Times.Once);
+            txMock.Verify(t => t.RunAsync(query, It.Is<IDictionary<string, object>?>(dic => dic != null && dic.ContainsKey(parameter) && dic[parameter] as string == parameterValue)), Times.Once);
         }
     }
 }

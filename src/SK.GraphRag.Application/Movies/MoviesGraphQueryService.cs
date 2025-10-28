@@ -8,7 +8,6 @@ public sealed class MoviesGraphQueryService(
     IMoviesDataAccess dataAccess,
     ILogger<MoviesGraphQueryService> logger) : IMoviesGraphQueryService
 {
-    //private readonly IDriver _driver = driver;
     private readonly IMoviesDataAccess _dataAccess = dataAccess;
     private readonly ILogger<MoviesGraphQueryService> _logger = logger;
 
@@ -22,16 +21,6 @@ public sealed class MoviesGraphQueryService(
 
         try
         {
-            /* OLD CODE - can be removed after base db access is tidied up */
-            //await _driver.VerifyConnectivityAsync().ConfigureAwait(false);
-            //var result = await _driver.ExecutableQuery(
-            //    @"MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie) RETURN m.title AS movieTitle")
-            //    .WithParameters(new { name = actorName })
-            //    .WithConfig(new QueryConfig(database: "neo4j"))
-            //    .ExecuteAsync(cancellationToken)
-            //    .ConfigureAwait(false);
-            //var results = result.Result.Select(r => r.Get<string>("movieTitle")).ToList();
-
             movieNames = await _dataAccess.ExecuteReadListAsync(
                 @"MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie) RETURN m.title AS movieTitle",
                 "movieTitle",
@@ -43,10 +32,6 @@ public sealed class MoviesGraphQueryService(
             _logQueryError(_logger, actorName, ex);
             throw;
         }
-        //finally
-        //{
-        //    // await _driver.CloseAsync().ConfigureAwait(false);
-        //}
 
         return movieNames;
     }
