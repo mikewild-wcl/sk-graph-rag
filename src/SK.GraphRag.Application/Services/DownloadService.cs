@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenAI.Responses;
 using SK.GraphRag.Application.Services.Interfaces;
 using SK.GraphRag.Application.Settings;
 
@@ -16,10 +17,10 @@ public sealed class DownloadService(
 
     // LoggerMessage delegates for improved performance (CA1848)
     private static readonly Action<ILogger, string, string, Exception?> _fileExistsLog =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Information,
-            new EventId(1, nameof(DownloadFileIfNotExists)),
-            "The file {File} already exists in {Dir}");
+    LoggerMessage.Define<string, string>(
+        LogLevel.Information,
+        new EventId(1, nameof(DownloadFileIfNotExists)),
+        "The file {File} already exists in {Dir}");
 
     private static readonly Action<ILogger, Uri, object, Exception?> _downloadFailedLog =
         LoggerMessage.Define<Uri, object>(
@@ -59,6 +60,19 @@ public sealed class DownloadService(
         await fileStream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
         _downloadedLog(_logger, filePath, null);
+    }
+
+    public bool TryGetDownloadedFilePath(string fileName, out string? filePath)
+    {
+        filePath = Path.Combine(_downloadSettings.DownloadDirectory, fileName);
+
+        if (!File.Exists(filePath))
+        {
+            filePath = null;
+            return false;
+        }
+
+        return true;
     }
 
     private static void CreateDirectoryIfNotExists(string directoryPath)

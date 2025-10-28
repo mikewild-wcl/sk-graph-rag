@@ -1,5 +1,12 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Azure.AI.OpenAI;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Options;
 using Neo4j.Driver;
+using OpenAI;
+using SK.GraphRag.Application.Chunkers;
+using SK.GraphRag.Application.Chunkers.Interfaces;
 using SK.GraphRag.Application.EinsteinQuery;
 using SK.GraphRag.Application.EinsteinQuery.Interfaces;
 using SK.GraphRag.Application.Movies;
@@ -7,37 +14,95 @@ using SK.GraphRag.Application.Movies.Interfaces;
 using SK.GraphRag.Application.Services;
 using SK.GraphRag.Application.Services.Interfaces;
 using SK.GraphRag.Application.Settings;
+using SK.GraphRag.Components;
+using System.ClientModel;
 
 namespace SK.GraphRag.Extensions;
 
 internal static class ServiceCollectionExtensions
 {
-    internal static IServiceCollection ConfigureOptions(this IServiceCollection services, IConfiguration configuration)
-    {        
-        return services
+    internal static IServiceCollection ConfigureOptions(this IServiceCollection services, IConfiguration configuration) =>
+        services
             .Configure<AzureOpenAISettings>(configuration.GetSection(AzureOpenAISettings.SectionName))
             .Configure<DownloadSettings>(configuration.GetSection(DownloadSettings.SectionName))
             .Configure<EinsteinQuerySettings>(configuration.GetSection(EinsteinQuerySettings.SectionName))
-            .Configure<GraphDatabaseSettings>(configuration.GetSection(GraphDatabaseSettings.SectionName));
+            .Configure<GraphDatabaseSettings>(configuration.GetSection(GraphDatabaseSettings.SectionName))
+            ;
+
+    internal static IServiceCollection RegisterAIAgentServices(this IServiceCollection services)
+    {
+        services.AddSingleton(sp =>
+        {
+            var config = sp.GetRequiredService<IOptions<AzureOpenAISettings>>().Value;
+            return new AzureOpenAIClient(
+                new Uri(config.Endpoint),
+                new ApiKeyCredential(config.ApiKey));
+        });
+
+        services.AddSingleton(
+            new ChatClientAgentOptions(instructions: "You are good at telling jokes.", name: "Joker"));
+
+        services.AddKeyedChatClient("AzureOpenAI", sp =>
+        {
+            var config = sp.GetRequiredService<IOptions<AzureOpenAISettings>>().Value;
+            var client = sp.GetRequiredService<AzureOpenAIClient>();
+
+            return client
+            //return new AzureOpenAIClient(
+            //    new Uri(config.Endpoint),
+            //    new ApiKeyCredential(config.ApiKey))
+                .GetChatClient(config.DeploymentName)                
+                .AsIChatClient();
+        });
+
+        services.AddScoped(sp =>
+        {
+            var config = sp.GetRequiredService<IOptions<AzureOpenAISettings>>().Value;
+            var client = sp.GetRequiredService<AzureOpenAIClient>();
+
+            //return client.GetEmbeddingClient(config.EmbeddingDeploymentName);
+            return client.GetEmbeddingClient(config.EmbeddingDeploymentName).AsIEmbeddingGenerator();
+        });
+
+        services.AddSingleton<AIAgent>(sp => new ChatClientAgent(
+           chatClient: sp.GetRequiredKeyedService<IChatClient>("AzureOpenAI"),
+           options: sp.GetRequiredService<ChatClientAgentOptions>()));
+        
+
+        return services
+            ;
     }
 
-    internal static IServiceCollection RegisterServices(this IServiceCollection services)
-    {
-        services            
+    internal static IServiceCollection RegisterServices(this IServiceCollection services) =>
+        services
             .AddScoped<IMoviesDataAccess, MoviesDataAccess>()
             .AddScoped<IMoviesQueryService, MoviesQueryService>()
-            .AddScoped<IEinsteinQueryService, EinsteinQueryService>();
+            .AddScoped<IEinsteinQueryService, EinsteinQueryService>()
+            .AddTransient<IDocumentChunker, PdfDocumentChunker>()
+            ;
 
+    internal static IServiceCollection RegisterHttpClients(this IServiceCollection services)
+    {
         services.AddHttpClient<IDownloadService, DownloadService>(client =>
         {
-            var serviceProvider = services.BuildServiceProvider();
-            var options = serviceProvider.GetRequiredService<IOptions<DownloadSettings>>().Value;
-            client.Timeout = TimeSpan.FromSeconds(options.Timeout);
             client.DefaultRequestHeaders.Add("User-Agent", "SK.GraphRag-Downloader");
-        });
+            client.Timeout = Timeout.InfiniteTimeSpan; /* Timeout is handled by resilience policies */
+        })
+            .AddStandardResilienceHandler()
+            .Configure((options, sp) =>
+            {
+                var settings = sp.GetRequiredService<IOptions<DownloadSettings>>().Value;
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(settings.Timeout);
+            });
 
         return services;
     }
+
+    internal static IServiceCollection RegisterBlazorPersistenceServices(this IServiceCollection services) =>
+        services /* Add services to persist state across navigations (per circuit/session) */
+            .AddScoped<CounterState>()
+            .AddScoped<MoviesState>()
+            .AddScoped<EinsteinState>();
 
     internal static IServiceCollection RegisterGraphDatabase(this IServiceCollection services)
     {

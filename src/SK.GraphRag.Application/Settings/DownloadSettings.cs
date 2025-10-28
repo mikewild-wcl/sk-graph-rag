@@ -10,9 +10,5 @@ public record DownloadSettings(
     //https://stackoverflow.com/questions/64933022/can-i-use-c-sharp-9-records-as-ioptions
     public DownloadSettings() : this("downloads") { }
 
-    public required Uri EinsteinDocumentUri { get; init; }
-
-    public required string EinsteinDocumentFileName { get; init; }
-
     public int Timeout { get; init; } = 300; // Default timeout in seconds
 }

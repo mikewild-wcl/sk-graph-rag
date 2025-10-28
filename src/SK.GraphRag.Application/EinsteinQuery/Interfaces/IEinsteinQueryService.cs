@@ -4,5 +4,5 @@ public interface IEinsteinQueryService
 {
     Task<string> Ask(string question, CancellationToken cancellationToken = default);
 
-    Task LoadData();
+    Task LoadData(CancellationToken cancellationToken = default);
 }

@@ -137,7 +137,7 @@ using (var document = PdfDocument.Open(filePath))
         // }
     }
 
-    Console.WriteLine($"allLetters len={allLetters.Length}");;
+    Console.WriteLine($"allLetters len={allLetters.Length}");
     
     Console.WriteLine(allLetters.ToString().Substring(0, Math.Min(allLetters.Length, 500)));
 }

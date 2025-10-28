@@ -1,5 +1,11 @@
+using Azure.AI.OpenAI;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 using SK.GraphRag.Components;
 using SK.GraphRag.Extensions;
+using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.Net.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,22 +18,24 @@ builder.Services.AddRazorComponents()
 builder.Services
     .ConfigureOptions(builder.Configuration)
     .RegisterServices()
-    .RegisterGraphDatabase();
+    .RegisterBlazorPersistenceServices()
+    .RegisterHttpClients()
+    .RegisterGraphDatabase()
+    .RegisterAIAgentServices();
 
-// Persist state across navigations (per circuit/session)
-builder.Services.AddScoped<CounterState>();
-builder.Services.AddScoped<MoviesState>();
-builder.Services.AddScoped<EinsteinState>(); // Added
+builder.Services.AddHsts(options =>
+{
+    options.Preload = false;
+    options.MaxAge = TimeSpan.FromDays(60);
+});
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
