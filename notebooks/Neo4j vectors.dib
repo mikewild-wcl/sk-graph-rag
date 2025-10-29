@@ -6,13 +6,13 @@
 
 # Neo4j vectors
 
-A simple demo of vectors based on chapter 2 of Essential GraphRAG. The original notebokk is https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch02.ipynb
+A simple demo of vectors based on chapter 2 of Essential GraphRAG. The original notebook is https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch02.ipynb
 
 To remove objects from previous runs, either run the delete steps from the utils notebook or run these commands in the browser:
 
 ```
-DROP INDEX ftPdfChunk IF EXISTS;
-DROP INDEX pdf IF EXISTS;
+DROP INDEX index_ftPdfChunk IF EXISTS;
+DROP INDEX index_pdfChunk IF EXISTS;
 MATCH (c:Chunk) DETACH DELETE c;
 ```
 
@@ -284,6 +284,9 @@ var kernel = Kernel.CreateBuilder()
 #!csharp
 
 var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+
+#!csharp
+
 var embeddings = new List<ReadOnlyMemory<float>>();
 
 foreach(var chunk in chunks)
@@ -302,7 +305,7 @@ try
 {
     var result = await driver.ExecutableQuery(
         """
-        CREATE VECTOR INDEX pdf IF NOT EXISTS
+        CREATE VECTOR INDEX index_pdfChunk IF NOT EXISTS
         FOR (c:Chunk)
         ON c.embedding
         """)
@@ -403,7 +406,7 @@ var questionEmbedding = await embeddingGenerator.GenerateVectorAsync(question);
 
 /*
 query = '''
-CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) YIELD node AS hits, score
+CALL db.index.vector.queryNodes('index_pdfChunk', $k, $question_embedding) YIELD node AS hits, score
 RETURN hits.text AS text, score, hits.index AS index
 '''
 similar_records, _, _ = driver.execute_query(query, question_embedding=question_embedding, k=4)
@@ -420,7 +423,7 @@ try
 {
     var similarRecords = await driver.ExecutableQuery(
         """
-        CALL db.index.vector.queryNodes('pdf', $k, $question_embedding) 
+        CALL db.index.vector.queryNodes('index_pdfChunk', $k, $question_embedding) 
         YIELD node AS hits, score
         RETURN hits.text AS text, score, hits.index AS index
         """)
@@ -508,7 +511,7 @@ try
 {
     var result = await driver.ExecutableQuery(
         """
-        CREATE FULLTEXT INDEX ftPdfChunk IF NOT EXISTS
+        CREATE FULLTEXT INDEX index_ftPdfChunk IF NOT EXISTS
         FOR (c:Chunk) 
         ON EACH [c.text]
         """)
@@ -536,7 +539,7 @@ CALL {
     RETURN n.node AS node, (n.score / max) AS score
     UNION
     // keyword index
-    CALL db.index.fulltext.queryNodes('ftPdfChunk', $question, {limit: $k})
+    CALL db.index.fulltext.queryNodes('index_ftPdfChunk', $question, {limit: $k})
     YIELD node, score
     WITH collect({node:node, score:score}) AS nodes, max(score) AS max
     UNWIND nodes AS n
@@ -569,7 +572,7 @@ try
             RETURN n.node AS node, (n.score / max) AS score
             UNION
             // keyword index
-            CALL db.index.fulltext.queryNodes('ftPdfChunk', $question, {limit: $k})
+            CALL db.index.fulltext.queryNodes('index_ftPdfChunk', $question, {limit: $k})
             YIELD node, score
             WITH collect({node:node, score:score}) AS nodes, max(score) AS max
             UNWIND nodes AS n

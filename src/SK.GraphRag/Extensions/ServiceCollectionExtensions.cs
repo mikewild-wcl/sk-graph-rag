@@ -60,7 +60,6 @@ internal static class ServiceCollectionExtensions
             var config = sp.GetRequiredService<IOptions<AzureOpenAISettings>>().Value;
             var client = sp.GetRequiredService<AzureOpenAIClient>();
 
-            //return client.GetEmbeddingClient(config.EmbeddingDeploymentName);
             return client.GetEmbeddingClient(config.EmbeddingDeploymentName).AsIEmbeddingGenerator();
         });
 
@@ -68,9 +67,7 @@ internal static class ServiceCollectionExtensions
            chatClient: sp.GetRequiredKeyedService<IChatClient>("AzureOpenAI"),
            options: sp.GetRequiredService<ChatClientAgentOptions>()));
         
-
-        return services
-            ;
+        return services;
     }
 
     internal static IServiceCollection RegisterServices(this IServiceCollection services) =>
@@ -78,6 +75,7 @@ internal static class ServiceCollectionExtensions
             .AddScoped<IMoviesDataAccess, MoviesDataAccess>()
             .AddScoped<IMoviesQueryService, MoviesQueryService>()
             .AddScoped<IEinsteinQueryService, EinsteinQueryService>()
+            .AddScoped<IEinsteinQueryDataAccess, EinsteinQueryDataAccess>()
             .AddTransient<IDocumentChunker, PdfDocumentChunker>()
             ;
 

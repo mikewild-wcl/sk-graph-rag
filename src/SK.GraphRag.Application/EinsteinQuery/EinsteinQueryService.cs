@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenAI.VectorStores;
 using SK.GraphRag.Application.Chunkers.Interfaces;
 using SK.GraphRag.Application.EinsteinQuery.Interfaces;
 using SK.GraphRag.Application.Services.Interfaces;
@@ -11,12 +12,14 @@ using System.Text;
 namespace SK.GraphRag.Application.EinsteinQuery;
 
 public sealed class EinsteinQueryService(
+    IEinsteinQueryDataAccess dataAccess,
     IDownloadService downloadService,
     IDocumentChunker documentChunker,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     IOptions<EinsteinQuerySettings> queryOptions,
     ILogger<EinsteinQueryService> logger) : IEinsteinQueryService
 {
+    private readonly IEinsteinQueryDataAccess _dataAccess = dataAccess;
     private readonly IDownloadService _downloadService = downloadService;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator = embeddingGenerator;
     private readonly EinsteinQuerySettings _querySettings = queryOptions.Value;
@@ -73,6 +76,8 @@ public sealed class EinsteinQueryService(
 
     public async Task LoadData(CancellationToken cancellationToken = default)
     {
+        //TODO: Move data load to EinsteinDataIngestionService to handle this workflow
+
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - can remove this when all logging is moved to delegates
         _logLoadDataCalled(_logger, "LoadData called", null);
 
@@ -84,16 +89,31 @@ public sealed class EinsteinQueryService(
             return;
         }
 
+        await _dataAccess.RemoveExistingData().ConfigureAwait(false);
+        await _dataAccess.CreateVectorIndexIfNotExists().ConfigureAwait(false);
+
+        var chunks = new List<string>();
+        var embeddings = new List<ReadOnlyMemory<float>>();
+
         await foreach (var chunk in documentChunker.StreamTextChunks(filePath, cancellationToken).ConfigureAwait(true))
         {
+            if(string.IsNullOrWhiteSpace(chunk))
+            {
+                continue;
+            }
+
             _logger.LogInformation("Chunk: {Chunk}", chunk);
             var embedding = await _embeddingGenerator.GenerateVectorAsync(chunk, cancellationToken: cancellationToken).ConfigureAwait(false);
             LogEmbedding(embedding);
+
+            chunks.Add(chunk);
+            embeddings.Add(embedding);
         }
 
-        //TODO: create embeddings, and save to Graph DB
-        //      Need a PdfParserService/ChunkingService/EmbeddingService, GraphDataService
-        //      Consider making a EinsteinDataIngestionService to handle this workflow
+        await _dataAccess.SaveTextChunks(chunks, embeddings).ConfigureAwait(false);
+
+        await _dataAccess.CreateFullTextIndexIfNotExists().ConfigureAwait(false);
+
         _logLoadDataComplete(_logger, _querySettings.DocumentUri.ToString(), _querySettings.DocumentFileName, null);
 #pragma warning restore CA1848 // Use the LoggerMessage delegates
     }

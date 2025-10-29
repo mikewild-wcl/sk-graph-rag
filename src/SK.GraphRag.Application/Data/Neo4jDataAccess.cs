@@ -16,7 +16,7 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
     private readonly ILogger<Neo4jDataAccess> _logger;
 
     private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, Exception?> _logQueryError =
-    LoggerMessage.Define<string>(LogLevel.Error, 
+    LoggerMessage.Define<string>(LogLevel.Error,
         new EventId(1, nameof(Neo4jDataAccess)),
         "There was a problem while executing database {AccessType} query");
 
@@ -52,14 +52,10 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
         {
             parameters = parameters == null ? new Dictionary<string, object>() : parameters;
 
-            var result = await _session.ReadTransactionAsync(async tx =>
+            var result = await _session.ExecuteReadAsync(async tx =>
             {
-                T scalar = default(T);
-
                 var res = await tx.RunAsync(query, parameters);
-
-                scalar = (await res.SingleAsync())[0].As<T>();
-
+                var scalar = (await res.SingleAsync())[0].As<T>();
                 return scalar;
             });
 
@@ -72,20 +68,37 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
         }
     }
 
+    public async Task ExecuteWriteTransactionAsync(string query, IDictionary<string, object>? parameters = null)
+    {
+        try
+        {
+            parameters = parameters == null ? new Dictionary<string, object>() : parameters;
+
+            var result = await _session.ExecuteWriteAsync(async tx =>
+            {
+                var res = await tx.RunAsync(query, parameters);
+                return res;
+            });
+
+            //return result;
+        }
+        catch (Exception ex)
+        {
+            _logQueryError(_logger, "Write", ex);
+            throw;
+        }
+    }
+
     public async Task<T> ExecuteWriteTransactionAsync<T>(string query, IDictionary<string, object>? parameters = null)
     {
         try
         {
             parameters = parameters == null ? new Dictionary<string, object>() : parameters;
 
-            var result = await _session.WriteTransactionAsync(async tx =>
+            var result = await _session.ExecuteWriteAsync(async tx =>
             {
-                T scalar = default(T);
-
                 var res = await tx.RunAsync(query, parameters);
-
-                scalar = (await res.SingleAsync())[0].As<T>();
-
+                var scalar = (await res.SingleAsync())[0].As<T>();
                 return scalar;
             });
 

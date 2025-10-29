@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "<Pending>", Scope = "type", Target = "~T:SK.GraphRag.Application.UnitTests.Data.Neo4jDataAccessTests.TestNeo4jDataAccess")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "<Pending>", Scope = "type", Target = "~T:SK.GraphRag.Application.UnitTests.EinsteinQuery.EinsteinQueryServiceTests")]
