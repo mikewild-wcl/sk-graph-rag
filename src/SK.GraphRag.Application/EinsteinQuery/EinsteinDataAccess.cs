@@ -7,16 +7,16 @@ using SK.GraphRag.Application.Settings;
 
 namespace SK.GraphRag.Application.EinsteinQuery;
 
-public class EinsteinQueryDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
+public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
 {
-    private readonly ILogger<EinsteinQueryDataAccess> _logger;
+    private readonly ILogger<EinsteinDataAccess> _logger;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - can remove this when all logging is moved to delegates
 #pragma warning disable IDE0290 // Use primary constructor - disabled because of code passing options base class constructor call
-    public EinsteinQueryDataAccess(
+    public EinsteinDataAccess(
         IDriver driver,
         IOptions<GraphDatabaseSettings> options,
-        ILogger<EinsteinQueryDataAccess> logger)
+        ILogger<EinsteinDataAccess> logger)
         : base(
             driver,
             options,
@@ -130,8 +130,8 @@ public class EinsteinQueryDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
         }
 
 #pragma warning disable CA1031 // Do not catch general exception types
-            try
-            {
+        try
+        {
             await ExecuteWriteTransactionAsync(
                 """
                 WITH $chunks as chunks, range(0, size($chunks)) AS index

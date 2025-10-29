@@ -2,7 +2,8 @@
 @using SK.GraphRag.Application.EinsteinQuery
 @using SK.GraphRag.Application.EinsteinQuery.Interfaces
 @rendermode InteractiveServer
-@inject IEinsteinQueryService EinsteinService
+@inject IEinsteinDataIngestionService IngestionService
+@inject IEinsteinQueryService QueryService
 @inject EinsteinState State
 
 <PageTitle>Einstein Chat</PageTitle>
@@ -59,7 +60,7 @@
         State.SetLoading(true);
         try
         {
-            var answer = await EinsteinService.Ask(question);
+            var answer = await QueryService.Ask(question);
             State.AddExchange(question, answer);
             State.CurrentQuestion = string.Empty;
         }
@@ -74,7 +75,7 @@
         State.SetLoading(true);
         try
         {
-            await EinsteinService.LoadData();
+            await IngestionService.LoadData();
         }
         finally
         {

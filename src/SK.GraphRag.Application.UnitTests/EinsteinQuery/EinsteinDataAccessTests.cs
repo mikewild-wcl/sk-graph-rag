@@ -7,7 +7,7 @@ using SK.GraphRag.Application.UnitTests.TestExtensions;
 
 namespace SK.GraphRag.Application.UnitTests.EinsteinQuery;
 
-public class EinsteinQueryDataAccessTests
+public class EinsteinDataAccessTests
 {
     private const string DATABASE_NAME = "einsteinVectorDb";
     private const string DATABASE_NAME_FIELD = "_databaseName";        
@@ -22,9 +22,9 @@ public class EinsteinQueryDataAccessTests
                 EinsteinVectorDb = DATABASE_NAME
             });
 
-        var sut = new EinsteinQueryDataAccess(Mock.Of<IDriver>(),
+        var sut = new EinsteinDataAccess(Mock.Of<IDriver>(),
             options,
-            NullLogger<EinsteinQueryDataAccess>.Instance);
+            NullLogger<EinsteinDataAccess>.Instance);
 
         await using (sut.ConfigureAwait(false))
         {

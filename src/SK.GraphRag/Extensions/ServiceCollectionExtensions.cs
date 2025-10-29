@@ -74,8 +74,9 @@ internal static class ServiceCollectionExtensions
         services
             .AddScoped<IMoviesDataAccess, MoviesDataAccess>()
             .AddScoped<IMoviesQueryService, MoviesQueryService>()
-            .AddScoped<IEinsteinQueryService, EinsteinQueryService>()
-            .AddScoped<IEinsteinQueryDataAccess, EinsteinQueryDataAccess>()
+            .AddScoped<IEinsteinDataIngestionService, EinsteinDataIngestionService>()
+            .AddScoped<IEinsteinQueryService, EinsteinQueryService>()        
+            .AddScoped<IEinsteinQueryDataAccess, EinsteinDataAccess>()
             .AddTransient<IDocumentChunker, PdfDocumentChunker>()
             ;
 

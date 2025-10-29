@@ -17,11 +17,9 @@ public sealed class MoviesQueryService(
 
     public async Task<List<string>> GetMoviesForActor(string actorName, CancellationToken cancellationToken = default)
     {
-        var movieNames = new List<string>();
-
         try
         {
-            movieNames = await _dataAccess.ExecuteReadListAsync(
+            return await _dataAccess.ExecuteReadListAsync(
                 @"MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie) RETURN m.title AS movieTitle",
                 "movieTitle",
                 new Dictionary<string, object> { { "name", actorName } })
@@ -32,7 +30,5 @@ public sealed class MoviesQueryService(
             _logQueryError(_logger, actorName, ex);
             throw;
         }
-
-        return movieNames;
     }
 }

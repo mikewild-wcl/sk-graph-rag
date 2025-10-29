@@ -1,7 +1,6 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OpenAI.VectorStores;
 using SK.GraphRag.Application.Chunkers.Interfaces;
 using SK.GraphRag.Application.EinsteinQuery.Interfaces;
 using SK.GraphRag.Application.Services.Interfaces;
@@ -13,14 +12,11 @@ namespace SK.GraphRag.Application.EinsteinQuery;
 
 public sealed class EinsteinQueryService(
     IEinsteinQueryDataAccess dataAccess,
-    IDownloadService downloadService,
-    IDocumentChunker documentChunker,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     IOptions<EinsteinQuerySettings> queryOptions,
     ILogger<EinsteinQueryService> logger) : IEinsteinQueryService
 {
     private readonly IEinsteinQueryDataAccess _dataAccess = dataAccess;
-    private readonly IDownloadService _downloadService = downloadService;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator = embeddingGenerator;
     private readonly EinsteinQuerySettings _querySettings = queryOptions.Value;
     private readonly ILogger<EinsteinQueryService> _logger = logger;
@@ -34,24 +30,6 @@ public sealed class EinsteinQueryService(
         ["when did einstein die?"] = "He died on April 18, 1955 in Princeton, New Jersey, USA.",
     };
 
-    private static readonly Action<ILogger, string, Exception?> _fileNotFoundLog =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(1, nameof(LoadData)),
-            "The file {File} was not found in the downloads directory");
-
-    private static readonly Action<ILogger, string, Exception?> _logLoadDataCalled =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(1, nameof(LoadData)),
-            "LoadData called: {Message}");
-
-    private static readonly Action<ILogger, string, string, Exception?> _logLoadDataComplete =
-    LoggerMessage.Define<string, string>(
-        LogLevel.Information,
-        new EventId(1, nameof(LoadData)),
-        "File load complete for uri {Uri} file {FileName}");
-
     public async Task<string> Ask(string question, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(question))
@@ -60,7 +38,6 @@ public sealed class EinsteinQueryService(
         }
 
         var embedding = await _embeddingGenerator.GenerateVectorAsync(question.Trim(), cancellationToken: cancellationToken).ConfigureAwait(false);
-        LogEmbedding(embedding);
 
         //TODO: Query Graph DB for relevant chunks
         //TODO: Call MAF chat completion
@@ -72,67 +49,5 @@ public sealed class EinsteinQueryService(
         }
 
         return "I don't have an answer. Try asking about birth, Nobel Prize, or famous works.";
-    }
-
-    public async Task LoadData(CancellationToken cancellationToken = default)
-    {
-        //TODO: Move data load to EinsteinDataIngestionService to handle this workflow
-
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - can remove this when all logging is moved to delegates
-        _logLoadDataCalled(_logger, "LoadData called", null);
-
-        await _downloadService.DownloadFileIfNotExists(_querySettings.DocumentUri, _querySettings.DocumentFileName, cancellationToken).ConfigureAwait(false);
-
-        if (!_downloadService.TryGetDownloadedFilePath(_querySettings.DocumentFileName, out var filePath) || filePath is null)
-        {
-            _fileNotFoundLog(_logger, _querySettings.DocumentFileName, null);
-            return;
-        }
-
-        await _dataAccess.RemoveExistingData().ConfigureAwait(false);
-        await _dataAccess.CreateVectorIndexIfNotExists().ConfigureAwait(false);
-
-        var chunks = new List<string>();
-        var embeddings = new List<ReadOnlyMemory<float>>();
-
-        await foreach (var chunk in documentChunker.StreamTextChunks(filePath, cancellationToken).ConfigureAwait(true))
-        {
-            if(string.IsNullOrWhiteSpace(chunk))
-            {
-                continue;
-            }
-
-            _logger.LogInformation("Chunk: {Chunk}", chunk);
-            var embedding = await _embeddingGenerator.GenerateVectorAsync(chunk, cancellationToken: cancellationToken).ConfigureAwait(false);
-            LogEmbedding(embedding);
-
-            chunks.Add(chunk);
-            embeddings.Add(embedding);
-        }
-
-        await _dataAccess.SaveTextChunks(chunks, embeddings).ConfigureAwait(false);
-
-        await _dataAccess.CreateFullTextIndexIfNotExists().ConfigureAwait(false);
-
-        _logLoadDataComplete(_logger, _querySettings.DocumentUri.ToString(), _querySettings.DocumentFileName, null);
-#pragma warning restore CA1848 // Use the LoggerMessage delegates
-    }
-
-    private void LogEmbedding(ReadOnlyMemory<float> embedding)
-    {
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - can remove this when all logging is moved to delegates
-        if (embedding.Length > 0)
-        {
-            var arr = embedding.ToArray();
-            _logger.LogInformation("Embedding array length: {Length}", arr.Length);
-            var embeddingString = new StringBuilder("[");
-            for (int i = 0; i < Math.Min(arr.Length, 8); i++)
-            {
-                embeddingString.Append(CultureInfo.InvariantCulture, $"{arr[i]}");
-            }
-            embeddingString.Append($" ... ]");
-            _logger.LogInformation("Embedding {EmbeddingString}", embeddingString);
-        }
-#pragma warning restore CA1848 // Use the LoggerMessage delegates
     }
 }
