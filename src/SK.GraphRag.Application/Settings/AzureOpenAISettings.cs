@@ -29,6 +29,6 @@ public record AzureOpenAISettings(
         $$"""
         Endpoint = {{{Endpoint}}}, 
         Deployment = {{DeploymentName}}, 
-        Embedding Deployment = {{DeploymentName}}
+        Embedding Deployment = {{EmbeddingDeploymentName}}
         """;
 }

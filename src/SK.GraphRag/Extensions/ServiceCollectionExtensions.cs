@@ -108,14 +108,14 @@ internal static class ServiceCollectionExtensions
         var buildLogger = loggerFactory.CreateLogger<Program>();
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates
-        buildLogger.LogInformation("Configuring Neo4j with Connection: {Connection}, User: {User}",
+        buildLogger.LogInformation("Configuring Graph database with Connection: {Connection}, User: {User}",
             options.Connection,
             options.User);
 
         if (options.Connection is null)
         {
-            buildLogger.LogInformation("Neo4j connection string is not configured. It should be set up in Neo4j:Connection");
-            return services; // or throw a configuration exception            
+            buildLogger.LogInformation("Graph database connection string is not configured. It should be set up in GraphDatabase:Connection");
+            return services; // or throw a configuration exception
         }
 #pragma warning restore CA1848 // Use the LoggerMessage delegates
 
