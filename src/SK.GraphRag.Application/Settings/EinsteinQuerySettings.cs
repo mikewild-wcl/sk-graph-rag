@@ -1,5 +1,8 @@
-﻿namespace SK.GraphRag.Application.Settings;
+﻿using System.Diagnostics;
 
+namespace SK.GraphRag.Application.Settings;
+
+[DebuggerDisplay($"DocumentFileName = {{{nameof(DocumentFileName)}}}, DocumentUri = {{{nameof(DocumentUri)}}}")]
 public record EinsteinQuerySettings()
 {
     public const string SectionName = "EinsteinQuery";

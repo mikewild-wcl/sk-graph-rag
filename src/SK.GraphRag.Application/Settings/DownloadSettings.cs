@@ -1,5 +1,8 @@
-﻿namespace SK.GraphRag.Application.Settings;
+﻿using System.Diagnostics;
 
+namespace SK.GraphRag.Application.Settings;
+
+[DebuggerDisplay($"DownloadDirectory = {{{nameof(DownloadDirectory)}}}, Timeout = {{{nameof(Timeout)},d}}")]
 public record DownloadSettings(
     string DownloadDirectory)
 {

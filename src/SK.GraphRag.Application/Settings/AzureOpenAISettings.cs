@@ -1,5 +1,8 @@
+using System.Diagnostics;
+
 namespace SK.GraphRag.Application.Settings;
 
+[DebuggerDisplay("{DebuggerDisplay,nq}")]
 public record AzureOpenAISettings(
     string ApiKey,
     string Endpoint,
@@ -20,4 +23,12 @@ public record AzureOpenAISettings(
     public string? EmbeddingModelId { get; init; }
 
     public int Timeout { get; init; } = 30; // Default timeout in seconds
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private string DebuggerDisplay =>
+        $$"""
+        Endpoint = {{{Endpoint}}}, 
+        Deployment = {{DeploymentName}}, 
+        Embedding Deployment = {{DeploymentName}}
+        """;
 }

@@ -1,5 +1,6 @@
 ﻿namespace SK.GraphRag.Application.Settings;
 
+[System.Diagnostics.DebuggerDisplay($"Connection = {{{nameof(Connection)}}}, User = {{{nameof(User)}}},nq")]
 public record GraphDatabaseSettings(
     Uri Connection,
     string User,
