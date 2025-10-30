@@ -454,7 +454,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 // Ask the LLM a question based on the context
 /*
-system_message = "You're en Einstein expert, but can only use the provided documents to respond to the questions."
+system_message = "You're an Einstein expert, but can only use the provided documents to respond to the questions."
 user_message = f"""
 Use the following documents to answer the question that will follow:
 {[doc["text"] for doc in similar_records]}
@@ -478,7 +478,7 @@ for chunk in stream:
     print(chunk.choices[0].delta.content or "", end="")
 */
 
-var systemMessage = "You're en Einstein expert, but can only use the provided documents to respond to the questions.";
+var systemMessage = "You're an Einstein expert, but can only use the provided documents to respond to the questions.";
 var userMessage = $"""
 Use the following documents to answer the question that will follow:
 {string.Join("\n\n---\n\n", similarRecordsTexts)} 

@@ -16,7 +16,6 @@ public class MoviesDataAccess : Neo4jDataAccess, IMoviesDataAccess
         ILogger<MoviesDataAccess> logger)
         : base(
             driver,
-            options,
             options?.Value?.MoviesDb ?? GraphDatabaseSettings.DefaultDb,
             logger)
     {

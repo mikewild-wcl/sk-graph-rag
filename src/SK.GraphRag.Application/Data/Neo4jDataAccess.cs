@@ -22,15 +22,13 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
 
     protected Neo4jDataAccess(
         IDriver driver,
-        IOptions<GraphDatabaseSettings> options,
         string databaseName,
         ILogger<Neo4jDataAccess> logger)
     {
         ArgumentNullException.ThrowIfNull(driver);
-        ArgumentNullException.ThrowIfNull(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
 
-        _databaseName = databaseName; // GraphDatabaseSettings.DefaultDb; // Default should be overwritten by derived classes
+        _databaseName = databaseName;
 
         _session = driver.AsyncSession(o => o.WithDatabase(_databaseName));
         _logger = logger;

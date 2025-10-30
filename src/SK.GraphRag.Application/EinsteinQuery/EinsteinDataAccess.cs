@@ -4,6 +4,7 @@ using Neo4j.Driver;
 using SK.GraphRag.Application.Data;
 using SK.GraphRag.Application.EinsteinQuery.Interfaces;
 using SK.GraphRag.Application.Settings;
+using System.Globalization;
 
 namespace SK.GraphRag.Application.EinsteinQuery;
 
@@ -19,7 +20,6 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
         ILogger<EinsteinDataAccess> logger)
         : base(
             driver,
-            options,
             options?.Value?.EinsteinVectorDb ?? GraphDatabaseSettings.DefaultDb,
             logger)
     {
@@ -48,9 +48,8 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
 #pragma warning restore CA1031 // Do not catch general exception types
     }
 
-    public async Task CreateVectorIndexIfNotExists()
+    public async Task CreateChunkVectorIndexIfNotExists()
     {
-        //Call to create vector indexes in the Einstein vector database
 #pragma warning disable CA1031 // Do not catch general exception types
         try
         {
@@ -61,7 +60,7 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
                 ON c.embedding
                 """).ConfigureAwait(false);
 
-            _logger.LogInformation("""Created vector index.""");
+            _logger.LogInformation("Created vector index 'index_pdfChunk'.");
         }
         catch (Exception ex)
         {
@@ -70,8 +69,31 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
 #pragma warning restore CA1031 // Do not catch general exception types
     }
 
-    public async Task<List<string>> QuerySimilarRecords(ReadOnlyMemory<float> queryEmbedding, int k = 3)
+    public async Task CreateChildVectorIndexIfNotExists()
     {
+#pragma warning disable CA1031 // Do not catch general exception types
+        try
+        {
+            await ExecuteWriteTransactionAsync(
+                """
+                CREATE VECTOR INDEX index_parent IF NOT EXISTS
+                FOR (c:Child)
+                ON c.embedding
+                """).ConfigureAwait(false);
+
+            _logger.LogInformation("Created vector index 'index_parent'.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while creating vector index: {Message}", ex.Message);
+        }
+#pragma warning restore CA1031 // Do not catch general exception types
+    }
+
+    public async Task<IList<RankedSearchResult>> QuerySimilarRecords(ReadOnlyMemory<float> queryEmbedding, int k = 3)
+    {
+        List<RankedSearchResult> rankedResults = [];
+
 #pragma warning disable CA1031 // Do not catch general exception types
         try
         {
@@ -79,23 +101,29 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
                 """
                 CALL db.index.vector.queryNodes('index_pdfChunk', $k, $question_embedding) 
                 YIELD node AS hits, score
-                RETURN hits.text AS text, score, hits.index AS index
+                RETURN hits{ text: hits.text, score, index: hits.index } AS rankedResult
+                ORDER BY score DESC
                 """,
-                "text",
+                "rankedResult",
                 new Dictionary<string, object>
                 {
                     { "k", 2 }, // k as in in KNN - number of nearest neighbors
                     { "question_embedding", queryEmbedding.ToArray() }
                 }).ConfigureAwait(false);
 
-            return ["results"];
+            rankedResults.AddRange(results.Select(x =>
+                new RankedSearchResult(
+                    x["text"] as string ?? string.Empty,
+                    Convert.ToDouble(x["score"], CultureInfo.InvariantCulture),
+                    Convert.ToInt32(x["index"], CultureInfo.InvariantCulture)
+                )));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while querying similar records: {Message}", ex.Message);
         }
 
-        return [];
+        return rankedResults;
 #pragma warning restore CA1031 // Do not catch general exception types
     }
 
@@ -106,7 +134,11 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
         {
             await ExecuteWriteTransactionAsync("DROP INDEX index_ftPdfChunk IF EXISTS;").ConfigureAwait(false);
             await ExecuteWriteTransactionAsync("DROP INDEX index_pdfChunk IF EXISTS;").ConfigureAwait(false);
+            await ExecuteWriteTransactionAsync("DROP INDEX index_parent IF EXISTS; ").ConfigureAwait(false);
+
             await ExecuteWriteTransactionAsync("MATCH (c:Chunk) DETACH DELETE c;").ConfigureAwait(false);
+            await ExecuteWriteTransactionAsync("MATCH (c:Child) DETACH DELETE c;").ConfigureAwait(false);
+            await ExecuteWriteTransactionAsync("MATCH (p:Parent) DETACH DELETE p;").ConfigureAwait(false);
 
             _logger.LogInformation(@"Removed existing data and indexes from database.");
         }

@@ -1,14 +1,13 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using SK.GraphRag.Application.EinsteinQuery;
 using SK.GraphRag.Application.EinsteinQuery.Interfaces;
-using SK.GraphRag.Application.Settings;
 
 namespace SK.GraphRag.Application.UnitTests.EinsteinQuery;
 
 public class EinsteinQueryServiceTests
 {
+    private readonly Mock<IChatClient> _mockChatClient;
     private readonly Mock<IEinsteinQueryDataAccess> _mockDataAccess;
     private readonly Mock<IEmbeddingGenerator<string, Embedding<float>>> _mockEmbeddingGenerator;
 
@@ -18,22 +17,15 @@ public class EinsteinQueryServiceTests
 
     public EinsteinQueryServiceTests()
     {
+        _mockChatClient = new Mock<IChatClient>();
         _mockDataAccess = new Mock<IEinsteinQueryDataAccess>();
         _mockEmbeddingGenerator = new Mock<IEmbeddingGenerator<string, Embedding<float>>>();
-
-        IOptions<EinsteinQuerySettings> options = new OptionsWrapper<EinsteinQuerySettings>(
-            new EinsteinQuerySettings
-            {
-                DocumentUri = new("https://localhost/"),
-                DocumentFileName = "unknown"
-            });
-
         _mockLogger = new Mock<ILogger<EinsteinQueryService>>();
 
         _sut = new EinsteinQueryService(
+            _mockChatClient.Object,
             _mockDataAccess.Object,
             _mockEmbeddingGenerator.Object,
-            options,
             _mockLogger.Object);
     }
 

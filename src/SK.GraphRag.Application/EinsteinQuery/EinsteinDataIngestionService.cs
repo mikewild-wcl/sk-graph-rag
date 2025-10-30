@@ -58,12 +58,16 @@ public sealed class EinsteinDataIngestionService(
             return;
         }
 
+        //TODO: Move above await and get private TryGetDownloadedFilePath local method 
+        //TODO: Move below to private PrepareDatabase method
         await _dataAccess.RemoveExistingData().ConfigureAwait(false);
-        await _dataAccess.CreateVectorIndexIfNotExists().ConfigureAwait(false);
+        await _dataAccess.CreateChunkVectorIndexIfNotExists().ConfigureAwait(false);
+        await _dataAccess.CreateChildVectorIndexIfNotExists().ConfigureAwait(false);
 
         var chunks = new List<string>();
         var embeddings = new List<ReadOnlyMemory<float>>();
 
+        //TODO: Add batching here, and remove excess logging
         await foreach (var chunk in _documentChunker.StreamTextChunks(filePath, cancellationToken).ConfigureAwait(true))
         {
             if(string.IsNullOrWhiteSpace(chunk))
@@ -80,6 +84,9 @@ public sealed class EinsteinDataIngestionService(
         }
 
         await _dataAccess.SaveTextChunks(chunks, embeddings).ConfigureAwait(false);
+
+        //TODO: Also create parent and child data
+        //      see https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch03.ipynb
 
         await _dataAccess.CreateFullTextIndexIfNotExists().ConfigureAwait(false);
 

@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OpenAI.Responses;
 using SK.GraphRag.Application.Services.Interfaces;
 using SK.GraphRag.Application.Settings;
 

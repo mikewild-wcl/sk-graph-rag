@@ -7,9 +7,11 @@ public interface IEinsteinQueryDataAccess : INeo4jDataAccess
 {
     Task CreateFullTextIndexIfNotExists();
 
-    Task CreateVectorIndexIfNotExists();
+    Task CreateChildVectorIndexIfNotExists();
 
-    Task<List<string>> QuerySimilarRecords(ReadOnlyMemory<float> queryEmbedding, int k = 3);
+    Task CreateChunkVectorIndexIfNotExists();
+
+    Task<IList<RankedSearchResult>> QuerySimilarRecords(ReadOnlyMemory<float> queryEmbedding, int k = 3);
         
     Task SaveTextChunks(IReadOnlyList<string> chunks, IReadOnlyList<ReadOnlyMemory<float>> embeddings);
 

@@ -1,9 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Neo4j.Driver;
 using SK.GraphRag.Application.Data;
-using SK.GraphRag.Application.Settings;
 using SK.GraphRag.Application.UnitTests.TestExtensions;
 
 namespace SK.GraphRag.Application.UnitTests.Data;
@@ -16,12 +14,10 @@ public class Neo4jDataAccessTests
     /* Test class required because Neo4jDataAccess is abstract */
     private sealed class TestNeo4jDataAccess(
         IDriver driver,
-        IOptions<GraphDatabaseSettings> options,
         string databaseName,
         ILogger<Neo4jDataAccess> logger)
         : Neo4jDataAccess(
             driver,
-            options,
             databaseName,
             logger)
     {
@@ -32,10 +28,7 @@ public class Neo4jDataAccessTests
     public async Task Constructor_SetsDatabaseName()
     {
         // Arrange
-        IOptions<GraphDatabaseSettings> options = new OptionsWrapper<GraphDatabaseSettings>(new GraphDatabaseSettings());
-
         var sut = new TestNeo4jDataAccess(Mock.Of<IDriver>(),
-            options,
             TEST_DATABASE_NAME,
             NullLogger<Neo4jDataAccess>.Instance);
 
@@ -50,11 +43,8 @@ public class Neo4jDataAccessTests
     [Fact]
     public void Constructor_WithEmptyDatabaseName_ThrowsException()
     {
-        // Arrange
-        IOptions<GraphDatabaseSettings> options = new OptionsWrapper<GraphDatabaseSettings>(new GraphDatabaseSettings());
-
+        // Act and Assert
         FluentActions.Invoking(() => new TestNeo4jDataAccess(Mock.Of<IDriver>(),
-            options,
             string.Empty,
             NullLogger<Neo4jDataAccess>.Instance))
             .Should().Throw<ArgumentException>();
@@ -63,16 +53,12 @@ public class Neo4jDataAccessTests
     [Fact]
     public void Constructor_WithNullDatabaseName_ThrowsException()
     {
-        // Arrange
-        IOptions<GraphDatabaseSettings> options = new OptionsWrapper<GraphDatabaseSettings>(new GraphDatabaseSettings());
+        // Act and Assert
 
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
         FluentActions.Invoking(() => new TestNeo4jDataAccess(Mock.Of<IDriver>(),
-            options,
-            null,
+            null!,
             NullLogger<Neo4jDataAccess>.Instance))
             .Should().Throw<ArgumentNullException>();
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
     }
 
     [Fact]
@@ -108,10 +94,9 @@ public class Neo4jDataAccessTests
             .Setup(d => d.AsyncSession(It.IsAny<Action<SessionConfigBuilder>>()))
             .Returns(sessionMock.Object);
 
-        var options = Options.Create(new GraphDatabaseSettings());
         var loggerMock = new Mock<ILogger<Neo4jDataAccess>>();
 
-        var sut = new TestNeo4jDataAccess(driverMock.Object, options, TEST_DATABASE_NAME, loggerMock.Object);
+        var sut = new TestNeo4jDataAccess(driverMock.Object, TEST_DATABASE_NAME, loggerMock.Object);
 
         // Act
         await using (sut.ConfigureAwait(false))
@@ -162,10 +147,9 @@ public class Neo4jDataAccessTests
             .Setup(d => d.AsyncSession(It.IsAny<Action<SessionConfigBuilder>>()))
             .Returns(sessionMock.Object);
 
-        var options = Options.Create(new GraphDatabaseSettings());
         var loggerMock = new Mock<ILogger<Neo4jDataAccess>>();
 
-        var sut = new TestNeo4jDataAccess(driverMock.Object, options, TEST_DATABASE_NAME, loggerMock.Object);
+        var sut = new TestNeo4jDataAccess(driverMock.Object, TEST_DATABASE_NAME, loggerMock.Object);
 
         // Act
         await using (sut.ConfigureAwait(false))
