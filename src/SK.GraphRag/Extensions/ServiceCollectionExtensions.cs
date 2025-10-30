@@ -4,7 +4,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
-using OpenAI;
 using SK.GraphRag.Application.Chunkers;
 using SK.GraphRag.Application.Chunkers.Interfaces;
 using SK.GraphRag.Application.EinsteinQuery;
@@ -42,15 +41,12 @@ internal static class ServiceCollectionExtensions
         services.AddSingleton(
             new ChatClientAgentOptions(instructions: "You are good at telling jokes.", name: "Joker"));
 
-        services.AddKeyedChatClient("AzureOpenAI", sp =>
+        services.AddKeyedChatClient(ServiceKeys.AzureOpenAIChatClient, sp =>
         {
             var config = sp.GetRequiredService<IOptions<AzureOpenAISettings>>().Value;
             var client = sp.GetRequiredService<AzureOpenAIClient>();
 
             return client
-            //return new AzureOpenAIClient(
-            //    new Uri(config.Endpoint),
-            //    new ApiKeyCredential(config.ApiKey))
                 .GetChatClient(config.DeploymentName)                
                 .AsIChatClient();
         });
