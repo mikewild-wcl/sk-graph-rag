@@ -24,8 +24,9 @@ public sealed class EinsteinQueryService(
     private readonly IChatClient _chatClient = chatClient;
     private readonly IEinsteinQueryDataAccess _dataAccess = dataAccess;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator = embeddingGenerator;
-    private readonly ILogger<EinsteinQueryService> _logger = logger;
+    //private readonly ILogger<EinsteinQueryService> _logger = logger;
 
+    /*
     private static readonly Dictionary<string, string> _facts = new(StringComparer.OrdinalIgnoreCase)
     {
         ["when was einstein born?"] = "Albert Einstein was born on March 14, 1879.",
@@ -34,6 +35,7 @@ public sealed class EinsteinQueryService(
         ["where was einstein born?"] = "He was born in Ulm, in the Kingdom of Wrttemberg in the German Empire.",
         ["when did einstein die?"] = "He died on April 18, 1955 in Princeton, New Jersey, USA.",
     };
+    */
 
     public async Task<string> Ask(string question, CancellationToken cancellationToken = default)
     {
@@ -44,16 +46,19 @@ public sealed class EinsteinQueryService(
 
         var userInput = question.Trim();
 
-        var stepBackPrompt = await GenerateStepBackPrompt(userInput, cancellationToken);
+        var stepBackPrompt = await GenerateStepBackPrompt(userInput, cancellationToken).ConfigureAwait(false);
 
         var embedding = await _embeddingGenerator.GenerateVectorAsync(userInput, cancellationToken: cancellationToken).ConfigureAwait(false);
-        var searchResults = await _dataAccess.QuerySimilarRecords(embedding);
+        var searchResults = await _dataAccess.QuerySimilarRecords(embedding).ConfigureAwait(false);
 
-        /* Only need one of these! */
-        var stepBackResponse = await GenerateQuestionResponse(stepBackPrompt, searchResults.Select(r => r.Text).ToList(), cancellationToken);
-        var finalResponse = await GenerateQuestionResponse(userInput, searchResults.Select(r => r.Text).ToList(), cancellationToken);
+        var stepBackEmbedding = await _embeddingGenerator.GenerateVectorAsync(stepBackPrompt, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var stepBackSearchResults = await _dataAccess.QuerySimilarRecords(stepBackEmbedding).ConfigureAwait(false);
 
-        return finalResponse;
+        // TODO: Return everything as a structured response, then the UI can show stepBackPrompt and both answers, as well as the returned search query results
+        var standardResponse = await GenerateQuestionResponse(userInput, searchResults.Select(r => r.Text).ToList(), cancellationToken).ConfigureAwait(false);
+        var stepBackResponse = await GenerateQuestionResponse(stepBackPrompt, stepBackSearchResults.Select(r => r.Text).ToList(), cancellationToken).ConfigureAwait(false);
+
+        return standardResponse;
     }
 
     private async Task<string> GenerateQuestionResponse(string userInput, List<string> searchResults, CancellationToken cancellationToken)
@@ -72,17 +77,14 @@ public sealed class EinsteinQueryService(
                 """
                 You're an expert on Albert Einstein, but can only use provided documents to respond to questions.
                 If you can't answer, respond with "I don't have an answer. Try asking about birth, Nobel Prize, or famous works."
+
+                If I refer to "Albert" I mean "Albert Einstein".
                 """,
             name: "EinsteinAssistant"
             );
 
-        var response = await agent.RunAsync(prompt, null, new AgentRunOptions(), cancellationToken);
+        var response = await agent.RunAsync(prompt, null, new AgentRunOptions(), cancellationToken).ConfigureAwait(false);
         return response.Text;
-    }
-
-    private string CreatePrompt(string question)
-    {
-        return "I don't have an answer. Try asking about birth, Nobel Prize, or famous works.";
     }
 
     private async Task<string> GenerateStepBackPrompt(string userInput, CancellationToken cancellationToken)
@@ -103,7 +105,9 @@ public sealed class EinsteinQueryService(
             name: "StepbackAgent"
             );
 
-        var response = await agent.RunAsync(HttpUtility.HtmlEncode(userInput), null, new AgentRunOptions(), cancellationToken);
+        var response = await agent
+            .RunAsync(HttpUtility.HtmlEncode(userInput), null, new AgentRunOptions(), cancellationToken)
+            .ConfigureAwait(false);
         return response.Text;
     }
 }

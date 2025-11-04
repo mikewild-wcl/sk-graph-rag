@@ -1,5 +1,8 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    /* Reduce bright white background across the app */
+    background-color: #f5f6f7;
+    color: #222;
 }
 
 a, .btn-link {
@@ -13,7 +16,8 @@ a, .btn-link {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  /* soften the white focus ring so it isn't overly bright */
+  box-shadow: 0 0 0 0.1rem rgba(255,255,255,0.6), 0 0 0 0.25rem #258cfb;
 }
 
 .content {

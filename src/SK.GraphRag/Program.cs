@@ -1,11 +1,6 @@
-using Azure.AI.OpenAI;
-using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
+//using Microsoft.Extensions.AI;
 using SK.GraphRag.Components;
 using SK.GraphRag.Extensions;
-using System.ClientModel;
-using System.ClientModel.Primitives;
-using System.Net.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 

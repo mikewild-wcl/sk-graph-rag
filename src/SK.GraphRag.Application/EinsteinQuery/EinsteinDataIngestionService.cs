@@ -42,7 +42,7 @@ public sealed class EinsteinDataIngestionService(
         LogLevel.Information,
         new EventId(1, nameof(LoadData)),
         "File load complete for uri {Uri} file {FileName}");
-        
+
     public async Task LoadData(CancellationToken cancellationToken = default)
     {
         //TODO: Move data load to EinsteinDataIngestionService to handle this workflow
@@ -67,23 +67,44 @@ public sealed class EinsteinDataIngestionService(
         var chunks = new List<string>();
         var embeddings = new List<ReadOnlyMemory<float>>();
 
-        //TODO: Add batching here, and remove excess logging
+        const int batchSize = 10;
+        var batch = new List<(string Chunks, ReadOnlyMemory<float> Embeddings)>(batchSize);
+
         await foreach (var chunk in _documentChunker.StreamTextChunks(filePath, cancellationToken).ConfigureAwait(true))
         {
-            if(string.IsNullOrWhiteSpace(chunk))
+            if (string.IsNullOrWhiteSpace(chunk))
             {
                 continue;
             }
 
             _logger.LogInformation("Chunk: {Chunk}", chunk);
             var embedding = await _embeddingGenerator.GenerateVectorAsync(chunk, cancellationToken: cancellationToken).ConfigureAwait(false);
-            LogEmbedding(embedding);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                LogEmbedding(embedding);
+            }
 
             chunks.Add(chunk);
             embeddings.Add(embedding);
+            batch.Add((chunk, embedding));
+            if (batch.Count >= batchSize)
+            {
+                await _dataAccess.SaveTextChunks(
+                    [.. batch.Select(x => x.Chunks)],
+                    [.. batch.Select(x => x.Embeddings)])
+                    .ConfigureAwait(false);
+                
+                batch.Clear();
+            }
         }
 
-        await _dataAccess.SaveTextChunks(chunks, embeddings).ConfigureAwait(false);
+        if (batch.Count >= 0)
+        {
+            await _dataAccess.SaveTextChunks(
+                [.. batch.Select(x => x.Chunks)],
+                [.. batch.Select(x => x.Embeddings)])
+                .ConfigureAwait(false);
+        }
 
         //TODO: Also create parent and child data
         //      see https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch03.ipynb
