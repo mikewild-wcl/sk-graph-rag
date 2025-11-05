@@ -22,7 +22,9 @@ public sealed class MoviesQueryService(
             return await _dataAccess.ExecuteReadListAsync(
                 @"MATCH (a:Person {name: $name})-[:ACTED_IN]->(m:Movie) RETURN m.title AS movieTitle",
                 "movieTitle",
-                new Dictionary<string, object> { { "name", actorName } })
+                new Dictionary<string, object> {
+                    { "name", actorName }
+                })
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

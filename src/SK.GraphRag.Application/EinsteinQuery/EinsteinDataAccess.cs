@@ -109,7 +109,8 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
                 {
                     { "k", 2 }, // k as in in KNN - number of nearest neighbors
                     { "question_embedding", queryEmbedding.ToArray() }
-                }).ConfigureAwait(false);
+                })
+                .ConfigureAwait(false);
 
             rankedResults.AddRange(results.Select(x =>
                 new RankedSearchResult(
@@ -148,7 +149,7 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
         }
     }
 
-    public async Task SaveTextChunks(IReadOnlyList<string> chunks, IReadOnlyList<ReadOnlyMemory<float>> embeddings)
+    public async Task SaveTextChunks(IReadOnlyList<string> chunks, IReadOnlyList<ReadOnlyMemory<float>> embeddings, int startIndex = 0)
     {
         if (chunks is null || embeddings is null || chunks.Count != embeddings.Count)
         {
@@ -166,23 +167,19 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
         {
             await ExecuteWriteTransactionAsync(
                 """
-                WITH $chunks as chunks, range(0, size($chunks)) AS index
+                WITH $chunks as chunks, range(0, size($chunks) - 1) AS index
                 UNWIND index AS i
                 WITH i, chunks[i] AS chunk, $embeddings[i] AS embedding
-                MERGE (c:Chunk {index: i})
-                SET c.text = chunk, c.embedding = embedding
-                WITH $chunks as chunks, range(0, size($chunks)) AS index
-                UNWIND index AS i
-                WITH i, chunks[i] AS chunk, $embeddings[i] AS embedding
-                MERGE (c:Chunk {index: i})
+                MERGE (c:Chunk {index: i + $startIndex})
                 SET c.text = chunk, c.embedding = embedding
                 """,
                 new Dictionary<string, object>
                 {
                     { "chunks", chunks },
-                    { "embeddings", embeddings.Select(e => e.ToArray()).ToList()
-                }
-            }).ConfigureAwait(false);
+                    { "embeddings", embeddings.Select(e => e.ToArray()).ToList() },
+                    { "startIndex", startIndex }
+                })
+                .ConfigureAwait(false);
 
             _logger.LogInformation("saving {ChunkCount} text chunks and {EmbeddingCount} embeddings.", chunks.Count, embeddings.Count);
         }

@@ -68,6 +68,7 @@ public sealed class EinsteinDataIngestionService(
         var embeddings = new List<ReadOnlyMemory<float>>();
 
         const int batchSize = 10;
+        var batchIndex = 0;
         var batch = new List<(string Chunks, ReadOnlyMemory<float> Embeddings)>(batchSize);
 
         await foreach (var chunk in _documentChunker.StreamTextChunks(filePath, cancellationToken).ConfigureAwait(true))
@@ -91,9 +92,11 @@ public sealed class EinsteinDataIngestionService(
             {
                 await _dataAccess.SaveTextChunks(
                     [.. batch.Select(x => x.Chunks)],
-                    [.. batch.Select(x => x.Embeddings)])
+                    [.. batch.Select(x => x.Embeddings)],
+                    batchIndex)
                     .ConfigureAwait(false);
-                
+
+                batchIndex += batch.Count;
                 batch.Clear();
             }
         }
@@ -102,7 +105,8 @@ public sealed class EinsteinDataIngestionService(
         {
             await _dataAccess.SaveTextChunks(
                 [.. batch.Select(x => x.Chunks)],
-                [.. batch.Select(x => x.Embeddings)])
+                [.. batch.Select(x => x.Embeddings)],
+                batchIndex)            
                 .ConfigureAwait(false);
         }
 
