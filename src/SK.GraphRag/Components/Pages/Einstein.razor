@@ -30,7 +30,7 @@
             @foreach (var item in State.History)
             {
                 <div class="q"><strong>You:</strong> @item.Question</div>
-                <div class="a"><strong>Einstein:</strong> @item.Answer</div>
+                <div class="a"><strong>Einstein:</strong> @item.Answer.StandardResponse</div>
             }
         }
     </div>
@@ -61,7 +61,7 @@
         try
         {
             var answer = await QueryService.Ask(question);
-            State.AddExchange(question, answer.StandardResponse);
+            State.AddExchange(question, answer);
             State.CurrentQuestion = string.Empty;
         }
         finally
