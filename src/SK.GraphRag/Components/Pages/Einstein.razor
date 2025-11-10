@@ -61,7 +61,7 @@
         try
         {
             var answer = await QueryService.Ask(question);
-            State.AddExchange(question, answer);
+            State.AddExchange(question, answer.StandardResponse);
             State.CurrentQuestion = string.Empty;
         }
         finally

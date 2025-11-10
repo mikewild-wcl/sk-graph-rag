@@ -37,11 +37,14 @@ public sealed class EinsteinQueryService(
     };
     */
 
-    public async Task<string> Ask(string question, CancellationToken cancellationToken = default)
+    public async Task<EinsteinQueryResult> Ask(string question, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(question))
         {
-            return "Please ask a question about Albert Einstein.";
+            return EinsteinQueryResult.Empty with
+            {
+                StandardResponse = "Please ask a question about Albert Einstein."
+            };
         }
 
         var userInput = question.Trim();
@@ -54,11 +57,17 @@ public sealed class EinsteinQueryService(
         var stepBackEmbedding = await _embeddingGenerator.GenerateVectorAsync(stepBackPrompt, cancellationToken: cancellationToken).ConfigureAwait(false);
         var stepBackSearchResults = await _dataAccess.QuerySimilarRecords(stepBackEmbedding).ConfigureAwait(false);
 
-        // TODO: Return everything as a structured response, then the UI can show stepBackPrompt and both answers, as well as the returned search query results
         var standardResponse = await GenerateQuestionResponse(userInput, searchResults.Select(r => r.Text).ToList(), cancellationToken).ConfigureAwait(false);
         var stepBackResponse = await GenerateQuestionResponse(stepBackPrompt, stepBackSearchResults.Select(r => r.Text).ToList(), cancellationToken).ConfigureAwait(false);
 
-        return standardResponse;
+        return new EinsteinQueryResult
+        {
+            StandardResponse = standardResponse,
+            RewrittenQuery = stepBackPrompt,
+            StepBackResponse = stepBackResponse,
+            StandardSearchResults = [.. searchResults.Select(r => r.Text)],
+            StepBackSearchResults = [.. stepBackSearchResults.Select(r => r.Text)]
+        };
     }
 
     private async Task<string> GenerateQuestionResponse(string userInput, List<string> searchResults, CancellationToken cancellationToken)
