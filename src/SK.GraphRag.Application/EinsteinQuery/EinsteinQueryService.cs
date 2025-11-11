@@ -65,8 +65,8 @@ public sealed class EinsteinQueryService(
             StandardResponse = standardResponse,
             RewrittenQuery = stepBackPrompt,
             StepBackResponse = stepBackResponse,
-            StandardSearchResults = [.. searchResults.Select(r => r.Text)],
-            StepBackSearchResults = [.. stepBackSearchResults.Select(r => r.Text)]
+            StandardSearchResults = searchResults.ToList(),
+            StepBackSearchResults = stepBackSearchResults.ToList()
         };
     }
 

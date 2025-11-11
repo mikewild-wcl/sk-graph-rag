@@ -8,16 +8,16 @@ public record EinsteinQueryResult
 
     public required string StepBackResponse { get; init; }
 
-    public required IReadOnlyList<string> StandardSearchResults { get; init; }
+    public required IReadOnlyList<RankedSearchResult> StandardSearchResults { get; init; }
 
-    public required IReadOnlyList<string> StepBackSearchResults { get; init; }
+    public required IReadOnlyList<RankedSearchResult> StepBackSearchResults { get; init; }
 
     public static EinsteinQueryResult Empty => new()
     {
         StandardResponse = string.Empty,
         RewrittenQuery = string.Empty,
         StepBackResponse = string.Empty,
-        StandardSearchResults = Array.Empty<string>(),
-        StepBackSearchResults = Array.Empty<string>()
+        StandardSearchResults = Array.Empty<RankedSearchResult>(),
+        StepBackSearchResults = Array.Empty<RankedSearchResult>()
     };
 }

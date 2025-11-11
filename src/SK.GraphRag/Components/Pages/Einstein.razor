@@ -30,7 +30,37 @@
             @foreach (var item in State.History)
             {
                 <div class="q"><strong>You:</strong> @item.Question</div>
-                <div class="a"><strong>Einstein:</strong> @item.Answer.StandardResponse</div>
+                <div class="a">
+                    <strong>Rewritten Query:</strong> @item.Answer.RewrittenQuery<br />
+                    <strong>Standard Response:</strong> @item.Answer.StandardResponse<br />
+
+                    <details open>
+                        <summary>Standard Search Results</summary>
+                        <ul>
+                            @foreach (var result in item.Answer.StandardSearchResults)
+                            {
+                                <li>@result</li>
+                            }
+                        </ul>
+                    </details>
+
+                    <strong>Step Back Response:</strong> @item.Answer.StepBackResponse<br />
+
+                    <details>
+                        <summary>Step Back Search Results</summary>
+                        <ul>
+                            @foreach (var result in item.Answer.StepBackSearchResults)
+                            {
+                                <li>
+                                    @result.Text
+                                    <span class="@(result.Score > 0.9 ? "score-high" : result.Score > 0.5 ? "score-medium" : "score-low")">
+                                        (Score: @result.Score:F2)
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </details>
+                </div>
             }
         }
     </div>
