@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SK.GraphRag.SharedConstants\SK.GraphRag.SharedConstants.csproj" IsAspireProjectResource="false" />
-    <ProjectReference Include="..\SK.GraphRag\SK.GraphRag.csproj" />
+    <ProjectReference Include="..\Agentic.GraphRag.SharedConstants\Agentic.GraphRag.SharedConstants.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\Agentic.GraphRag\Agentic.GraphRag.csproj" />
   </ItemGroup>
 
 </Project>

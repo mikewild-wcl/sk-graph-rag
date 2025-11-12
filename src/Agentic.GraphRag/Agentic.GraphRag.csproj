@@ -12,9 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SK.GraphRag.Application\SK.GraphRag.Application.csproj" />
-    <ProjectReference Include="..\SK.GraphRag.ServiceDefaults\SK.GraphRag.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\SK.GraphRag.SharedConstants\SK.GraphRag.SharedConstants.csproj" />
+    <ProjectReference Include="..\Agentic.GraphRag.Application\Agentic.GraphRag.Application.csproj" />
+    <ProjectReference Include="..\Agentic.GraphRag.ServiceDefaults\Agentic.GraphRag.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Agentic.GraphRag.SharedConstants\Agentic.GraphRag.SharedConstants.csproj" />
   </ItemGroup>
 
 </Project>

@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SK.GraphRag.Application\SK.GraphRag.Application.csproj" />
+    <ProjectReference Include="..\Agentic.GraphRag.Application\Agentic.GraphRag.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

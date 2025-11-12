@@ -1,5 +1,4 @@
-//using Microsoft.Extensions.AI;
-using SK.GraphRag.Components;
+using Agentic.GraphRag.Components;
 using SK.GraphRag.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);

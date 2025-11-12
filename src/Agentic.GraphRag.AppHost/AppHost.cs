@@ -39,7 +39,7 @@ else if (addDockerContainers && graphDBProvider.GetValue() == "memgraph")
     // Compose memgraph 
 }
 
-builder.AddProject<Projects.SK_GraphRag>(ProjectNames.GraphRagBlazorApp)
+builder.AddProject<Projects.Agentic_GraphRag>(ProjectNames.GraphRagBlazorApp)
     .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.Provider}", graphDBProvider)
     .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.Connection}", graphDBConnection)
     .WithEnvironment($"{ResourceNames.GraphDatabaseSection}:{ResourceNames.User}", graphDBUser)
