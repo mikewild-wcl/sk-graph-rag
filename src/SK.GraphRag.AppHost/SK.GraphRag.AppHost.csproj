@@ -1,6 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.2" />
+<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,10 +7,6 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>5f571808-0150-4f5a-8387-992e26dfae3b</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.2" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SK.GraphRag.SharedConstants\SK.GraphRag.SharedConstants.csproj" IsAspireProjectResource="false" />
