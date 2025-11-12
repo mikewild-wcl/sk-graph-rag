@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Agentic.GraphRag.Application.Data;
+using Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
+using Agentic.GraphRag.Application.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Data;
-using SK.GraphRag.Application.EinsteinQuery.Interfaces;
-using SK.GraphRag.Application.Settings;
 using System.Globalization;
 
-namespace SK.GraphRag.Application.EinsteinQuery;
+namespace Agentic.GraphRag.Application.EinsteinQuery;
 
 public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
 {

@@ -1,8 +1,8 @@
+using Agentic.GraphRag.Application.Movies;
+using Agentic.GraphRag.Application.Movies.Interfaces;
 using Microsoft.Extensions.Logging;
-using SK.GraphRag.Application.Movies;
-using SK.GraphRag.Application.Movies.Interfaces;
 
-namespace SK.GraphRag.Application.UnitTests.Movies;
+namespace Agentic.GraphRag.Application.UnitTests.Movies;
 
 public class MoviesQueryServiceTests
 {

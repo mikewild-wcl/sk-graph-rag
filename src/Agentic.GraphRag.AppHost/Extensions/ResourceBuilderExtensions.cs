@@ -1,4 +1,4 @@
-﻿namespace SK.GraphRag.AppHost.Extensions;
+﻿namespace Agentic.GraphRag.AppHost.Extensions;
 
 internal static class ResourceBuilderExtensions
 {

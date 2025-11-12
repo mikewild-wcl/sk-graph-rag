@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.AI;
-using SK.GraphRag.Application.Data.Interfaces;
+﻿using Agentic.GraphRag.Application.Data.Interfaces;
+using Microsoft.Extensions.AI;
 
-namespace SK.GraphRag.Application.EinsteinQuery.Interfaces;
+namespace Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
 
 public interface IEinsteinQueryDataAccess : INeo4jDataAccess
 {

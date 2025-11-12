@@ -1,6 +1,6 @@
-﻿using SK.GraphRag.Application.Chunkers;
+﻿using Agentic.GraphRag.Application.Chunkers;
 
-namespace SK.GraphRag.Application.UnitTests.Chunkers;
+namespace Agentic.GraphRag.Application.UnitTests.Chunkers;
 
 public class TextChunkerTests(ITestOutputHelper output)
 {

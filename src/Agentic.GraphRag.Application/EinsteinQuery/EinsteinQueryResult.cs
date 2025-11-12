@@ -1,4 +1,4 @@
-﻿namespace SK.GraphRag.Application.EinsteinQuery;
+﻿namespace Agentic.GraphRag.Application.EinsteinQuery;
 
 public record EinsteinQueryResult
 {

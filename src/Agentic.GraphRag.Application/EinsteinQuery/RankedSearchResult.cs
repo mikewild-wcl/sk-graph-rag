@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace SK.GraphRag.Application.EinsteinQuery;
+namespace Agentic.GraphRag.Application.EinsteinQuery;
 
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public record RankedSearchResult(

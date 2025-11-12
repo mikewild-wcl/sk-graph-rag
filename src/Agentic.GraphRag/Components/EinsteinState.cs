@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
-using SK.GraphRag.Application.EinsteinQuery;
+using Agentic.GraphRag.Application.EinsteinQuery;
 
-namespace SK.GraphRag.Components;
+namespace Agentic.GraphRag.Components;
 
 [SuppressMessage("Performance", "CA1812", Justification = "Created via DI")]
 internal sealed class EinsteinState

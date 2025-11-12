@@ -1,4 +1,4 @@
-﻿using SK.GraphRag.Application.Chunkers.Interfaces;
+﻿using Agentic.GraphRag.Application.Chunkers.Interfaces;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UglyToad.PdfPig;
@@ -6,7 +6,7 @@ using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
-namespace SK.GraphRag.Application.Chunkers;
+namespace Agentic.GraphRag.Application.Chunkers;
 
 public class PdfDocumentChunker : IDocumentChunker
 {

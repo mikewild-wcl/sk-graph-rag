@@ -1,4 +1,4 @@
-﻿namespace SK.GraphRag.Application.Data.Interfaces;
+﻿namespace Agentic.GraphRag.Application.Data.Interfaces;
 
 public interface INeo4jDataAccess : IAsyncDisposable
 {

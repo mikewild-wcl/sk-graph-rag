@@ -1,5 +1,5 @@
-using SK.GraphRag.AppHost.Extensions;
-using SK.GraphRag.SharedConstants;
+using Agentic.GraphRag.AppHost.Extensions;
+using Agentic.GraphRag.SharedConstants;
 
 var builder = DistributedApplication.CreateBuilder(args);
 

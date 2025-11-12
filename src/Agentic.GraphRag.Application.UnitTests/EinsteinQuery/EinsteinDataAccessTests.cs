@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+﻿using Agentic.GraphRag.Application.EinsteinQuery;
+using Agentic.GraphRag.Application.Settings;
+using Agentic.GraphRag.Application.UnitTests.TestExtensions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
-using SK.GraphRag.Application.EinsteinQuery;
-using SK.GraphRag.Application.Settings;
-using SK.GraphRag.Application.UnitTests.TestExtensions;
 
-namespace SK.GraphRag.Application.UnitTests.EinsteinQuery;
+namespace Agentic.GraphRag.Application.UnitTests.EinsteinQuery;
 
 public class EinsteinDataAccessTests
 {

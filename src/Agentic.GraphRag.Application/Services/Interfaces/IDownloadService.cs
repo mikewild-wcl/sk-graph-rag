@@ -1,4 +1,4 @@
-namespace SK.GraphRag.Application.Services.Interfaces;
+namespace Agentic.GraphRag.Application.Services.Interfaces;
 
 public interface IDownloadService
 {

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace SK.GraphRag.Application.Chunkers;
+namespace Agentic.GraphRag.Application.Chunkers;
 
 public static class TextChunker
 {

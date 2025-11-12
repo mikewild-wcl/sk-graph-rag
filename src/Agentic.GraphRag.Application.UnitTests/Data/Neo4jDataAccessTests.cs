@@ -1,10 +1,10 @@
+using Agentic.GraphRag.Application.Data;
+using Agentic.GraphRag.Application.UnitTests.TestExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Data;
-using SK.GraphRag.Application.UnitTests.TestExtensions;
 
-namespace SK.GraphRag.Application.UnitTests.Data;
+namespace Agentic.GraphRag.Application.UnitTests.Data;
 
 public class Neo4jDataAccessTests
 {

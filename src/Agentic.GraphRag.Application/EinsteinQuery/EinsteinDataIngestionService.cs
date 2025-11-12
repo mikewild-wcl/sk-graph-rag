@@ -1,14 +1,14 @@
+using Agentic.GraphRag.Application.Chunkers.Interfaces;
+using Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
+using Agentic.GraphRag.Application.Services.Interfaces;
+using Agentic.GraphRag.Application.Settings;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SK.GraphRag.Application.Chunkers.Interfaces;
-using SK.GraphRag.Application.EinsteinQuery.Interfaces;
-using SK.GraphRag.Application.Services.Interfaces;
-using SK.GraphRag.Application.Settings;
 using System.Globalization;
 using System.Text;
 
-namespace SK.GraphRag.Application.EinsteinQuery;
+namespace Agentic.GraphRag.Application.EinsteinQuery;
 
 public sealed class EinsteinDataIngestionService(
     IEinsteinQueryDataAccess dataAccess,

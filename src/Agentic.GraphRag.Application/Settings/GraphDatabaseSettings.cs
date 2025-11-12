@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace SK.GraphRag.Application.Settings;
+namespace Agentic.GraphRag.Application.Settings;
 
 [DebuggerDisplay($"Connection = {{{nameof(Connection)}}}, User = {{{nameof(User)},nq}}")]
 public record GraphDatabaseSettings(

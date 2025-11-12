@@ -1,4 +1,4 @@
-﻿namespace SK.GraphRag.Application.Settings;
+﻿namespace Agentic.GraphRag.Application.Settings;
 
 public enum ServiceKeys
 {

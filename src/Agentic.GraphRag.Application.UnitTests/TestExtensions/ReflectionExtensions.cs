@@ -1,7 +1,7 @@
 ﻿using Neo4j.Driver;
 using System.Reflection;
 
-namespace SK.GraphRag.Application.UnitTests.TestExtensions;
+namespace Agentic.GraphRag.Application.UnitTests.TestExtensions;
 
 internal static class ReflectionExtensions
 {

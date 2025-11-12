@@ -1,6 +1,6 @@
-using SK.GraphRag.Application.Settings;
+using Agentic.GraphRag.Application.Settings;
 
-namespace SK.GraphRag.Application.UnitTests.Settings;
+namespace Agentic.GraphRag.Application.UnitTests.Settings;
 
 public class EinsteinQuerySettingsTests
 {

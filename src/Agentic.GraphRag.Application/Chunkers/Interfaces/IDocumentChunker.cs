@@ -1,4 +1,4 @@
-﻿namespace SK.GraphRag.Application.Chunkers.Interfaces;
+﻿namespace Agentic.GraphRag.Application.Chunkers.Interfaces;
 
 
 public interface IDocumentChunker

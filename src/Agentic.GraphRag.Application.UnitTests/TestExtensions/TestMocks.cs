@@ -1,4 +1,4 @@
-﻿namespace SK.GraphRag.Application.UnitTests.TestExtensions;
+﻿namespace Agentic.GraphRag.Application.UnitTests.TestExtensions;
 
 internal static class TestMocks
 {

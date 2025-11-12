@@ -1,4 +1,4 @@
-namespace SK.GraphRag.Application.Movies.Interfaces;
+namespace Agentic.GraphRag.Application.Movies.Interfaces;
 
 public interface IMoviesQueryService
 {

@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+﻿using Agentic.GraphRag.Application.Movies;
+using Agentic.GraphRag.Application.Settings;
+using Agentic.GraphRag.Application.UnitTests.TestExtensions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Movies;
-using SK.GraphRag.Application.Settings;
-using SK.GraphRag.Application.UnitTests.TestExtensions;
 
-namespace SK.GraphRag.Application.UnitTests.Movies;
+namespace Agentic.GraphRag.Application.UnitTests.Movies;
 
 public class MoviesDataAccessTests
 {

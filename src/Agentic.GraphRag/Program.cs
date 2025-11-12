@@ -1,5 +1,5 @@
 using Agentic.GraphRag.Components;
-using SK.GraphRag.Extensions;
+using Agentic.GraphRag.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

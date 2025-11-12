@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace SK.GraphRag.Components;
+namespace Agentic.GraphRag.Components;
 
 [SuppressMessage("Performance", "CA1812", Justification = "Activated by DI container")]
 internal sealed class MoviesState

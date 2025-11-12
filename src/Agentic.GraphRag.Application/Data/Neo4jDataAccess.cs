@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Agentic.GraphRag.Application.Data.Interfaces;
+using Microsoft.Extensions.Logging;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Data.Interfaces;
-using SK.GraphRag.Application.Settings;
 
-namespace SK.GraphRag.Application.Data;
+namespace Agentic.GraphRag.Application.Data;
 
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
 public abstract class Neo4jDataAccess : INeo4jDataAccess

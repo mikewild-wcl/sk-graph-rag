@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace SK.GraphRag.Application.Settings;
+namespace Agentic.GraphRag.Application.Settings;
 
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public record AzureOpenAISettings(

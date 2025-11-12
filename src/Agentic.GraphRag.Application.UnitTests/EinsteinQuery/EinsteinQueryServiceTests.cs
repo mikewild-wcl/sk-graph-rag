@@ -1,9 +1,9 @@
+using Agentic.GraphRag.Application.EinsteinQuery;
+using Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
-using SK.GraphRag.Application.EinsteinQuery;
-using SK.GraphRag.Application.EinsteinQuery.Interfaces;
 
-namespace SK.GraphRag.Application.UnitTests.EinsteinQuery;
+namespace Agentic.GraphRag.Application.UnitTests.EinsteinQuery;
 
 public class EinsteinQueryServiceTests
 {

@@ -1,22 +1,22 @@
-﻿using Azure.AI.OpenAI;
+﻿using Agentic.GraphRag.Application.Chunkers;
+using Agentic.GraphRag.Application.Chunkers.Interfaces;
+using Agentic.GraphRag.Application.EinsteinQuery;
+using Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
+using Agentic.GraphRag.Application.Movies;
+using Agentic.GraphRag.Application.Movies.Interfaces;
+using Agentic.GraphRag.Application.Services;
+using Agentic.GraphRag.Application.Services.Interfaces;
+using Agentic.GraphRag.Application.Settings;
+using Agentic.GraphRag.Components;
+using Azure.AI.OpenAI;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Chunkers;
-using SK.GraphRag.Application.Chunkers.Interfaces;
-using SK.GraphRag.Application.EinsteinQuery;
-using SK.GraphRag.Application.EinsteinQuery.Interfaces;
-using SK.GraphRag.Application.Movies;
-using SK.GraphRag.Application.Movies.Interfaces;
-using SK.GraphRag.Application.Services;
-using SK.GraphRag.Application.Services.Interfaces;
-using SK.GraphRag.Application.Settings;
-using SK.GraphRag.Components;
 using System.ClientModel;
 
-namespace SK.GraphRag.Extensions;
+namespace Agentic.GraphRag.Extensions;
 
 internal static class ServiceCollectionExtensions
 {
@@ -80,7 +80,7 @@ internal static class ServiceCollectionExtensions
     {
         services.AddHttpClient<IDownloadService, DownloadService>(client =>
         {
-            client.DefaultRequestHeaders.Add("User-Agent", "SK.GraphRag-Downloader");
+            client.DefaultRequestHeaders.Add("User-Agent", "Agentic.GraphRag-Downloader");
             client.Timeout = Timeout.InfiniteTimeSpan; /* Timeout is handled by resilience policies */
         })
             .AddStandardResilienceHandler()

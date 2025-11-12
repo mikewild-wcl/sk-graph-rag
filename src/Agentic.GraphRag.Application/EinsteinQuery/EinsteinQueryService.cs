@@ -1,19 +1,13 @@
+using Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
+using Agentic.GraphRag.Application.Settings;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OpenAI;
-using SK.GraphRag.Application.Chunkers.Interfaces;
-using SK.GraphRag.Application.EinsteinQuery.Interfaces;
-using SK.GraphRag.Application.Services.Interfaces;
-using SK.GraphRag.Application.Settings;
-using System.Globalization;
-using System.Text;
-using System.Threading;
 using System.Web;
 
-namespace SK.GraphRag.Application.EinsteinQuery;
+namespace Agentic.GraphRag.Application.EinsteinQuery;
 
 public sealed class EinsteinQueryService(
     [FromKeyedServices(ServiceKeys.AzureOpenAIChatClient)] IChatClient chatClient,

@@ -1,8 +1,8 @@
+using Agentic.GraphRag.Application.Movies.Interfaces;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver;
-using SK.GraphRag.Application.Movies.Interfaces;
 
-namespace SK.GraphRag.Application.Movies;
+namespace Agentic.GraphRag.Application.Movies;
 
 public sealed class MoviesQueryService(
     IMoviesDataAccess dataAccess,
