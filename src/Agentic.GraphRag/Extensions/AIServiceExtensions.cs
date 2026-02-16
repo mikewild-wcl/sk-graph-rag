@@ -1,5 +1,8 @@
-﻿using Agentic.GraphRag.Logging;
+﻿using Agentic.GraphRag.Application.Settings;
+using Agentic.GraphRag.Logging;
 using Agentic.GraphRag.Shared.Configuration;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Agentic.GraphRag.Extensions;
@@ -17,6 +20,8 @@ internal static class AIServiceExtensions
             builder.Services.AddSingleton(aiSettings);
 
             builder.AddAIProvider(aiSettings);
+
+            builder.AddAIAgents(aiSettings);
 
             builder.Services.AddHostedService<AIStartupLogger>();
 
@@ -74,5 +79,52 @@ internal static class AIServiceExtensions
 
             return builder;
         }
+
+        private IHostApplicationBuilder AddAIAgents(AISettings aiSettings)
+        {
+            builder.Services.AddKeyedSingleton<AIAgent>(
+                ServiceKeys.EinsteinAssistantAgent, 
+                (sp, name) =>
+                {
+                    //var chatClient = sp.GetRequiredKeyedService<IChatClient>("chat-model");
+                    var chatClient = sp.GetRequiredService<IChatClient>();
+                    return new ChatClientAgent(
+                        chatClient,
+                        name: "EinsteinAssistant",
+                        instructions: 
+                        """
+                        You're an expert on Albert Einstein, but can only use provided documents to respond to questions.
+                        If you can't answer, respond with "I don't have an answer.Try asking about birth, Nobel Prize, or famous works."
+                        If I refer to "Albert" I mean "Albert Einstein".
+                        """);
+                });
+
+            builder.Services.AddKeyedSingleton<AIAgent>(
+                ServiceKeys.EinsteinStepbackAgent,
+                (sp, name) =>
+                {
+                    var chatClient = sp.GetRequiredService<IChatClient>();
+                    return new ChatClientAgent(
+                        chatClient,
+                        name: "EinsteinStepbackAgent",
+                        instructions:
+                        """
+                        You are an expert at world knowledge. Your task is to step back
+                        and paraphrase a question to a more generic step-back question, which
+                        is easier to answer. ONLY output the step-back question without any surrounding text or description.
+                        Here are a few examples:
+                    
+                        "input": "Could the members of The Police perform lawful arrests?"
+                        "output": "What can the members of The Police do?"
+                    
+                        "input": "Bob Smith was born in what country?"
+                        "output": "What is Bob Smith’s personal history?"
+                        """);
+                });
+
+            return builder;
+        }
+
+
     }
 }

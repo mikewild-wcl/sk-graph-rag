@@ -4,6 +4,7 @@ using Agentic.GraphRag.Application.Settings;
 using Agentic.GraphRag.Shared.Configuration;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
 using System.Web;
@@ -11,14 +12,18 @@ using System.Web;
 namespace Agentic.GraphRag.Application.EinsteinQuery;
 
 public sealed class EinsteinQueryService(
-    IChatClient chatClient,
+    [FromKeyedServices(ServiceKeys.EinsteinAssistantAgent)]
+    AIAgent assistantAgent,
+    [FromKeyedServices(ServiceKeys.EinsteinStepbackAgent)]
+    AIAgent stepbackAgent,
     IEinsteinQueryDataAccess dataAccess,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     ResiliencePipelineProvider<string> resiliencePipelineProvider,
     AISettings aiSettings,
     ILogger<EinsteinQueryService> logger) : IEinsteinQueryService
 {
-    private readonly IChatClient _chatClient = chatClient;
+    private readonly AIAgent _assistantAgent = assistantAgent;
+    private readonly AIAgent _stepbackAgent = stepbackAgent;
     private readonly IEinsteinQueryDataAccess _dataAccess = dataAccess;
     private readonly AISettings _aiSettings = aiSettings;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator = embeddingGenerator;
@@ -108,18 +113,8 @@ public sealed class EinsteinQueryService(
             ---
             The question to answer using information only from the above documents: {encodedinput}
             """;
-
-        var agent = _chatClient.AsAIAgent(
-            instructions:
-                """
-                You're an expert on Albert Einstein, but can only use provided documents to respond to questions.
-                If you can't answer, respond with "I don't have an answer. Try asking about birth, Nobel Prize, or famous works."
-
-                If I refer to "Albert" I mean "Albert Einstein".
-                """,
-            name: "EinsteinAssistant");
-
-        var response = await agent
+                
+        var response = await _assistantAgent
             .RunAsync(prompt, null, new AgentRunOptions(), cancellationToken)
             .ConfigureAwait(false);
         
@@ -128,23 +123,7 @@ public sealed class EinsteinQueryService(
 
     private async Task<string> GenerateStepBackPrompt(string userInput, CancellationToken cancellationToken)
     {
-        var agent = _chatClient.AsAIAgent(
-            instructions:
-                """
-                You are an expert at world knowledge. Your task is to step back
-                and paraphrase a question to a more generic step-back question, which
-                is easier to answer. ONLY output the step-back question without any surrounding text or description.
-                Here are a few examples:
-
-                "input": "Could the members of The Police perform lawful arrests?"
-                "output": "What can the members of The Police do?"
-
-                "input": "Bob Smith was born in what country?"
-                "output": "What is Bob Smith’s personal history?"
-                """,
-            name: "StepbackAgent");
-
-        var response = await agent
+        var response = await _stepbackAgent
             .RunAsync(HttpUtility.HtmlEncode(userInput), null, new AgentRunOptions(), cancellationToken)
             .ConfigureAwait(false);
 

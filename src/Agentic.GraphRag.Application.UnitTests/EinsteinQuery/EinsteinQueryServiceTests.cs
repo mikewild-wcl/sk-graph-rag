@@ -1,5 +1,6 @@
 using Agentic.GraphRag.Application.EinsteinQuery;
 using Agentic.GraphRag.Application.EinsteinQuery.Interfaces;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
@@ -8,7 +9,9 @@ namespace Agentic.GraphRag.Application.UnitTests.EinsteinQuery;
 
 public class EinsteinQueryServiceTests
 {
-    private readonly Mock<IChatClient> _mockChatClient;
+    private readonly Mock<AIAgent> _mockAssistantAgent;
+    private readonly Mock<AIAgent> _mockStepbackAgent;
+
     private readonly Mock<IEinsteinQueryDataAccess> _mockDataAccess;
     private readonly Mock<IEmbeddingGenerator<string, Embedding<float>>> _mockEmbeddingGenerator;
     private readonly Mock<ResiliencePipelineProvider<string>> _mockResiliencePipelineProvider;
@@ -19,7 +22,8 @@ public class EinsteinQueryServiceTests
 
     public EinsteinQueryServiceTests()
     {
-        _mockChatClient = new Mock<IChatClient>();
+        _mockAssistantAgent = new Mock<AIAgent>();
+        _mockStepbackAgent = new Mock<AIAgent>();
         _mockDataAccess = new Mock<IEinsteinQueryDataAccess>();
         _mockEmbeddingGenerator = new Mock<IEmbeddingGenerator<string, Embedding<float>>>();
         _mockResiliencePipelineProvider = new Mock<ResiliencePipelineProvider<string>>();
@@ -32,7 +36,8 @@ public class EinsteinQueryServiceTests
                 Timeout: 60);
 
         _sut = new EinsteinQueryService(
-            _mockChatClient.Object,
+            _mockAssistantAgent.Object,
+            _mockStepbackAgent.Object,
             _mockDataAccess.Object,
             _mockEmbeddingGenerator.Object,
             _mockResiliencePipelineProvider.Object,
