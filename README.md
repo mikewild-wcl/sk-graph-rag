@@ -151,14 +151,15 @@ Inspired by the book Essential GraphRAG. Some code was adapted and translated fr
 - [chapter 2](https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch02.ipynb)
 - [chapter 3](https://github.com/tomasonjo/kg-rag/blob/main/notebooks/ch03.ipynb).
 
+## DevUI
+
+Added DevUI based on [Supercharging .NET Apps with DevUI and the New Microsoft Agent Framework](https://elbruno.com/2025/11/13/%F0%9F%9A%80-supercharging-net-apps-with-devui-and-the-new-microsoft-agent-framework/).
+
 ## TODO
 
 - add more unit tests
 - make the chunking IAsyncEnumerable based
     - [link text](https://stackoverflow.com/questions/21136753/read-a-very-large-file-by-chunks-and-not-line-by-line/21137097#21137097)
-- add a service to the project that uses the chunking
-- implement the repository pattern for Neo4j access
-    - See 
 - Look at extracting and using UFO dataset
     - See chapter 5 of [sql_book](https://github.com/cathytanimura/sql_book)
     - [SQL book to R](https://iangow.github.io/sql_book/)

@@ -1,5 +1,6 @@
 using Agentic.GraphRag.Components;
 using Agentic.GraphRag.Extensions;
+using Microsoft.Agents.AI.DevUI;
 using Microsoft.Extensions.AI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,14 +32,35 @@ builder.Services.AddHsts(options =>
     options.MaxAge = TimeSpan.FromDays(60);
 });
 
+var useDevUI = builder.Environment.IsDevelopment();
+if (useDevUI)
+{
+    // Register services for OpenAI responses and conversations (also required for DevUI)
+    builder.Services.AddOpenAIResponses();
+    builder.Services.AddOpenAIConversations();
+}
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+
+if (useDevUI)
+{
+    // Map AI-related endpoints needed by DevUI
+    app.MapOpenAIResponses();
+    app.MapOpenAIConversations();
+
+    // Map DevUI endpoint to /devui
+    app.MapDevUI();
+}
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
+
+    // Map DevUI endpoint to /devui
+    app.MapDevUI();
 }
 
 app.UseHttpsRedirection();

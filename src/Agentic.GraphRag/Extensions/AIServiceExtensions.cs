@@ -2,6 +2,7 @@
 using Agentic.GraphRag.Logging;
 using Agentic.GraphRag.Shared.Configuration;
 using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.DevUI;
 using Microsoft.Extensions.AI;
 using System.Diagnostics.CodeAnalysis;
 
@@ -24,6 +25,8 @@ internal static class AIServiceExtensions
             builder.AddAIAgents(aiSettings);
 
             builder.Services.AddHostedService<AIStartupLogger>();
+
+            builder.AddDevUI();
 
             return builder;
         }
@@ -90,7 +93,7 @@ internal static class AIServiceExtensions
                     var chatClient = sp.GetRequiredService<IChatClient>();
                     return new ChatClientAgent(
                         chatClient,
-                        name: "EinsteinAssistant",
+                        name: nameof(ServiceKeys.EinsteinAssistantAgent),
                         instructions: 
                         """
                         You're an expert on Albert Einstein, but can only use provided documents to respond to questions.
@@ -106,7 +109,7 @@ internal static class AIServiceExtensions
                     var chatClient = sp.GetRequiredService<IChatClient>();
                     return new ChatClientAgent(
                         chatClient,
-                        name: "EinsteinStepbackAgent",
+                        name: nameof(ServiceKeys.EinsteinStepbackAgent),
                         instructions:
                         """
                         You are an expert at world knowledge. Your task is to step back
