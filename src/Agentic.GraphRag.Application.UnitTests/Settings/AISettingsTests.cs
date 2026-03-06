@@ -18,6 +18,7 @@ public class AISettingsTests
 
         // Assert
         options.Provider.ShouldBe(provider);
+        options.ApiKey.ShouldBeNull();
         options.DeploymentName.ShouldBe(deploymentName);
         options.Model.ShouldBe(modelName);
         options.EmbeddingDeploymentName.ShouldBeNull();
@@ -39,6 +40,7 @@ public class AISettingsTests
 
         // Assert
         options.Provider.ShouldBe(provider);
+        options.ApiKey.ShouldBeNull();
         options.DeploymentName.ShouldBe(deploymentName);
         options.Model.ShouldBe(modelName);
         options.EmbeddingDeploymentName.ShouldBeNull();
@@ -51,6 +53,7 @@ public class AISettingsTests
     {
         //Arrange
         var provider = AIProvider.AzureOpenAI;
+        var apiKey = "test_key";
         var deploymentName = "deployment";
         var modelName = "model";
         var embeddingDeploymentName = "embedding";
@@ -69,6 +72,7 @@ public class AISettingsTests
         options = options with
         {
             Provider = provider,
+            ApiKey = apiKey,
             DeploymentName = deploymentName,
             Model = modelName,
             EmbeddingDeploymentName = embeddingDeploymentName,
@@ -78,6 +82,7 @@ public class AISettingsTests
 
         //Assert
         options.Provider.ShouldBe(provider);
+        options.ApiKey.ShouldBe(apiKey);
         options.DeploymentName.ShouldBe(deploymentName);
         options.Model.ShouldBe(modelName);
         options.EmbeddingDeploymentName.ShouldBe(embeddingDeploymentName);

@@ -1,6 +1,9 @@
 ﻿using Agentic.GraphRag.Application.Settings;
 using Agentic.GraphRag.Logging;
+using Agentic.GraphRag.Shared;
 using Agentic.GraphRag.Shared.Configuration;
+using Aspire.Azure.AI.OpenAI;
+using Azure.AI.OpenAI;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
 using Microsoft.Extensions.AI;
@@ -50,7 +53,12 @@ internal static class AIServiceExtensions
                     break;
 
                 case AIProvider.AzureOpenAI:
-                    var azureClient = builder.AddAzureOpenAIClient("ai-service");
+                    var clientSettings = new AzureOpenAISettings()
+                    {
+                        Key = aiSettings.ApiKey,
+                    };
+
+                    var azureClient = builder.AddAzureOpenAIClient(ResourceNames.AIService);
                     azureClient.AddChatClient();
                     if (!string.IsNullOrEmpty(aiSettings.EmbeddingDeploymentName))
                     {

@@ -2,6 +2,8 @@
 
 public static class ResourceNames
 {
+    public const string AIService = "ai-service";
+
     public const string DownloadSection = "Download";
     public const string DownloadDirectory = "DownloadDirectory";
     

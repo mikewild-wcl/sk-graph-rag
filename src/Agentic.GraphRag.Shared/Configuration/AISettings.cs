@@ -19,6 +19,8 @@ public record class AISettings(
     public AISettings() : this(default, default, default) { }
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
+    public string? ApiKey { get; init; }
+
     public string? EmbeddingDeploymentName { get; init; }
 
     public string? EmbeddingModel { get; init; }

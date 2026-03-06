@@ -44,6 +44,9 @@ To set this up:
   the name of the deployment(s) in your configuration (e.g. chat-gh-apikey embedding-gh-apikey), 
   or in the GITHUB_TOKEN environment variable.
 
+- For Azure OpenAI, set the endpoint and ApiKey in user secrets (the ApiKey is optional; if not provided then the code will use the current user identity).
+  Azure OpenAI also has optional settings `AI:ModelVersion`, `AI:SkuName` and `AI:SkuCapacity` that will be used if the models need to be provisioned.
+
 - On the client side, add the following nuget packages:
     - Aspire.Azure.AI.OpenAI
     - Aspire.Azure.AI.Inference

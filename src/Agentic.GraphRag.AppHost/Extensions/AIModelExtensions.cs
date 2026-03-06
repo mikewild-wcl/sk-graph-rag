@@ -1,8 +1,10 @@
-﻿using Agentic.GraphRag.Shared.Configuration;
+﻿using Agentic.GraphRag.Shared;
+using Agentic.GraphRag.Shared.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OllamaSharp.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
@@ -28,7 +30,7 @@ internal static class AIModelExtensions
     extension(IDistributedApplicationBuilder builder)
     {
         public (IResourceBuilder<IResourceWithConnectionString>, IResourceBuilder<IResourceWithConnectionString>?) AddAIModels(
-            string name = "ai-service")
+            string name = ResourceNames.AIService)
         {
             var settings = builder.Configuration.GetSection(AISettings.SectionName).Get<AISettings>();
 
@@ -76,6 +78,7 @@ internal static class AIModelExtensions
             //TODO: Validate that the defaults of "chat" and "embedding" correspond to settings.DeploymentName and settings.EmbeddingDeploymentName
             builder
                 .WithEnvironment("AI:Provider", settings!.Provider.ToString().ToLowerInvariant())
+                .WithEnvironment("AI:ApiKey", settings.ApiKey)
                 .WithEnvironment("AI:DeploymentName", settings.DeploymentName)
                 .WithEnvironment("AI:Model", settings.Model)
                 .WithEnvironment("AI:EmbeddingDeploymentName", settings.EmbeddingDeploymentName)
@@ -116,28 +119,35 @@ internal static class AIModelExtensions
         AISettings settings)
     {
         var config = builder.Configuration;
+        var connectionString = config["AI:ConnectionString"];
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            return ConfigureAzureOpenAI(builder, name, settings, connectionString!);
+        }
+
         var modelVersion = config["AI:ModelVersion"] ?? "2024-11-20";
         var skuName = config["AI:SkuName"] ?? "GlobalStandard";
         var skuCapacity = config.GetValue<int?>("AI:SkuCapacity") ?? 150;
 
-
         var openai = builder.AddAzureOpenAI(name);
-        var model = openai.AddDeployment(settings.DeploymentName, settings.Model, modelVersion);
 
-        openai.ConfigureInfrastructure(infra =>
+        var apiKey = config["AI:ApiKey"];
+        var resourceGroup = config["AI:ResourceGroup"];
+
+        var useExisting = !string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(resourceGroup);
+        if (useExisting)
         {
-            var deployments = infra.GetProvisionableResources()
-                .OfType<Azure.Provisioning.CognitiveServices.CognitiveServicesAccountDeployment>();
+            var existingOpenAIName = builder.AddParameter("existingOpenAIName");
+            var existingOpenAIResourceGroup = builder.AddParameter("existingOpenAIResourceGroup");
+            openai.AsExisting(existingOpenAIName, existingOpenAIResourceGroup);
 
-            foreach (var deployment in deployments)
-            {
-                deployment.Sku = new Azure.Provisioning.CognitiveServices.CognitiveServicesSku
-                {
-                    Name = skuName,
-                    Capacity = skuCapacity
-                };
-            }
-        });
+            //openai.WithProperties(p =>
+            //{
+            //    p.ConnectionStringExpression.Key = apiKey;
+            //});
+        }
+
+        var model = openai.AddDeployment(settings.DeploymentName, settings.Model, modelVersion);
 
         IResourceBuilder<IResourceWithConnectionString>? embeddingModel = null;
         if (settings.HasEmbeddingDeployment)
@@ -150,7 +160,47 @@ internal static class AIModelExtensions
                 });
         }
 
+        if (!useExisting)
+        {
+            openai.ConfigureInfrastructure(infra =>
+            {
+                var deployments = infra.GetProvisionableResources()
+                    .OfType<Azure.Provisioning.CognitiveServices.CognitiveServicesAccountDeployment>();
+
+                foreach (var deployment in deployments)
+                {
+                    deployment.Sku = new Azure.Provisioning.CognitiveServices.CognitiveServicesSku
+                    {
+                        Name = skuName,
+                        Capacity = skuCapacity
+                    };
+                }
+            });
+        }
+
         return (model, embeddingModel);
+    }
+
+    private static (IResourceBuilder<IResourceWithConnectionString>, IResourceBuilder<IResourceWithConnectionString>?) ConfigureAzureOpenAI(
+        IDistributedApplicationBuilder builder,
+        string name,
+        AISettings settings,
+        string connectionString)
+    {
+        builder.AddConnectionString(connectionString);
+        //.AddAzureOpenAI(name)
+        //.FromConnectionString(connectionString);
+
+        //var model = openai.AddDeployment(settings.DeploymentName, settings.Model);
+
+        //IResourceBuilder<IResourceWithConnectionString>? embeddingModel = null;
+        //if (settings.HasEmbeddingDeployment)
+        //{
+        //    embeddingModel = openai.AddDeployment(settings.EmbeddingDeploymentName!, settings.EmbeddingModel!);
+        //}
+
+        //return (model, embeddingModel);
+        return (null, null);
     }
 
     private static (IResourceBuilder<IResourceWithConnectionString>, IResourceBuilder<IResourceWithConnectionString>?) ConfigureGitHubModels(

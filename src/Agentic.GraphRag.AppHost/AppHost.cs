@@ -51,7 +51,7 @@ else if (addDockerContainers && graphDBProvider.GetValue() == "memgraph")
     // Compose memgraph 
 }
 
-var (chatModel, embeddingModel) = builder.AddAIModels("ai-service");
+var (chatModel, embeddingModel) = builder.AddAIModels(ResourceNames.AIService);
 
 builder.AddProject<GraphRag>(ProjectNames.GraphRagBlazorApp)
     .WithAIModels(chatModel, embeddingModel)
