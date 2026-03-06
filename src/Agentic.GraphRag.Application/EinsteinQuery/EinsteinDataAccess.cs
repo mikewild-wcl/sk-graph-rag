@@ -124,7 +124,7 @@ public class EinsteinDataAccess : Neo4jDataAccess, IEinsteinQueryDataAccess
         return rankedResults;
     }
 
-    public async Task<IList<RankedSearchResult>> QueryParentsAndChildren(ReadOnlyMemory<float> queryEmbedding, int k = 4)
+    public async Task<IList<RankedSearchResult>> QueryParentsAndChildren(ReadOnlyMemory<float> queryEmbedding, int k = 3)
     {
         List<RankedSearchResult> rankedResults = [];
 

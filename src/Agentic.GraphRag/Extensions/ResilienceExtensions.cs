@@ -69,7 +69,6 @@ internal static class ResilienceExtensions
                    OnRetry = args =>
                    {
                        context.ServiceProvider.GetService<ILogger>()?
-                           //.LogWarning("{PolicyName} retry policy will attempt retry {Retry} in {Delay}ms after a transient error or timeout. Status code {StatusCode}. {ExceptionMessage}",
                            .LogWarning("{Pipeline} retry policy will attempt retry {Retry} in {Delay}ms after a transient error or timeout. Outcome type is {OutcomeType}.",
                                ResiliencePipelineNames.RateLimitHitRetry,
                                args.AttemptNumber,

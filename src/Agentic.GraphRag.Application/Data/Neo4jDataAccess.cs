@@ -70,13 +70,11 @@ public abstract class Neo4jDataAccess : INeo4jDataAccess
         {
             parameters ??= new Dictionary<string, object>();
 
-            var result = await _session.ExecuteWriteAsync(async tx =>
+            await _session.ExecuteWriteAsync(async tx =>
             {
                 var res = await tx.RunAsync(query, parameters);
                 return res;
             });
-
-            //return result;
         }
         catch (Exception ex)
         {

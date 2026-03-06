@@ -17,7 +17,7 @@ public record EinsteinQueryResult
         StandardResponse = string.Empty,
         RewrittenQuery = string.Empty,
         StepBackResponse = string.Empty,
-        StandardSearchResults = Array.Empty<RankedSearchResult>(),
-        StepBackSearchResults = Array.Empty<RankedSearchResult>()
+        StandardSearchResults = [],
+        StepBackSearchResults = []
     };
 }

@@ -32,12 +32,8 @@ internal static class AIModelExtensions
         public (IResourceBuilder<IResourceWithConnectionString>, IResourceBuilder<IResourceWithConnectionString>?) AddAIModels(
             string name = ResourceNames.AIService)
         {
-            var settings = builder.Configuration.GetSection(AISettings.SectionName).Get<AISettings>();
-
-            if (settings == null)
-            {
-                throw new InvalidOperationException("AI settings not found. Please add AiSettings to the configuration.");
-            }
+            var settings = builder.Configuration.GetSection(AISettings.SectionName).Get<AISettings>()
+                    ?? throw new InvalidOperationException("AI settings not found. Please add AiSettings to the configuration.");
 
             var logger = builder.CreateLogger();
             logger?.ConfiguringAI(
@@ -69,9 +65,7 @@ internal static class AIModelExtensions
     {
         public IResourceBuilder<ProjectResource> WithAIModels(
             IResourceBuilder<IResourceWithConnectionString> chat,
-            IResourceBuilder<IResourceWithConnectionString>? embedding,
-            string deploymentName = "chat",
-            string embeddingDeploymentName = "embedding")
+            IResourceBuilder<IResourceWithConnectionString>? embedding)
         {
             var settings = builder.ApplicationBuilder.Configuration.GetSection(AISettings.SectionName).Get<AISettings>();
 
